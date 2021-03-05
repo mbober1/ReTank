@@ -1,25 +1,4 @@
-#pragma once
-#include <stdint.h>
-#include "soc/ledc_struct.h"
-
-
-enum class Direction {
-    FORWARD,
-    BACKWARD
-};
-
-
-class motor
-{
-private:
-    uint8_t in1, in2, pwmPin, pwmChannel;
-public:
-    motor(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel);
-    void direction(Direction dir);
-    void power(uint8_t pow);
-    void fastStop();
-    void softStop();
-};
+#include "motor.hpp"
 
 
 motor::motor(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel) : in1(in1), in2(in2), pwmPin(pwmPin), pwmChannel(pwmChannel) {
@@ -66,4 +45,3 @@ void motor::power(uint8_t pow) {
         LEDC.channel_group[0].channel[this->pwmChannel].conf0.clk_en = 0;
     }
 }
-

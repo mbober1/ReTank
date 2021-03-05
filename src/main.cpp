@@ -1,8 +1,6 @@
-#include <Arduino.h>
-#include "robot.hpp"
 #include <WiFi.h>
+#include <robot.hpp>
 #include "secrets.hpp"
-#include <string>
 
 
 const uint16_t port = 8090;
@@ -35,6 +33,8 @@ void setup() {
   Serial.begin(115200);
   connect();
 }
+
+
 
 void loop() {
   int packetSize = client.parsePacket();

@@ -1,5 +1,4 @@
-#include "motor.hpp"
-#include "math.h"
+#include <motor.hpp>
 
 class robot
 {
