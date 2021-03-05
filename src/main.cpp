@@ -9,7 +9,7 @@ const uint16_t port = 8090;
 const char * host = "192.168.31.111";
 
 WiFiUDP client;
-robot Robot(16, 17, 4, 0, 5, 18, 22, 1);
+robot Robot(16, 17, 4, 0, 5, 18, 22, 2);
 
 int left, right;
 char packetBuffer[255];
@@ -42,6 +42,7 @@ void loop() {
   if(packetSize) {
     client.read(packetBuffer, 255);
     std::string data(packetBuffer);
+    Serial.println(packetBuffer);
     while (!data.empty())
     {
         int separator = data.find(';');

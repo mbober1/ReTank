@@ -17,6 +17,7 @@ def main():
     screen = pygame.display.set_mode((240,180))
 
     running = True
+    matrix = [0,0]
 
     while running:
         for event in pygame.event.get():
@@ -26,10 +27,12 @@ def main():
             
             elif event.type == pygame.KEYDOWN or event.type == pygame.KEYUP or event.type == pygame.JOYAXISMOTION:
                 matrix = read_event(event)
-                dupa = "L" + str(matrix[0]) + ";R" + str(matrix[1]);
-                s.sendto(dupa.encode(), address)
-                print(dupa)
-                time.sleep(0.1)
+
+        
+        dupa = "L" + str(matrix[0]) + ";R" + str(matrix[1])
+        print(dupa)
+        s.sendto(dupa.encode(), address)
+        time.sleep(0.1)
 
 if __name__=="__main__":
     main()
