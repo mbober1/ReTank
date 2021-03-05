@@ -12,9 +12,7 @@ public:
 
 robot::robot(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel, uint8_t in3, uint8_t in4, uint8_t pwmPin2, uint8_t pwmChannel2)
 {
-    engine = new motor[2];
-    engine[0].setUP(in1, in2, pwmPin, pwmChannel);
-    engine[1].setUP(in3, in4, pwmPin2, pwmChannel2);
+    engine = new motor[2] { motor(in1, in2, pwmPin, pwmChannel), motor(in3, in4, pwmPin2, pwmChannel2) };
 }
 
 void robot::drive(int left, int right) {

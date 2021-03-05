@@ -3,11 +3,6 @@
 #include "soc/ledc_struct.h"
 
 
-#include "esp32-hal-ledc.h"
-
-
-
-
 enum class Direction {
     FORWARD,
     BACKWARD
@@ -20,39 +15,22 @@ private:
     uint8_t in1, in2, pwmPin, pwmChannel;
 public:
     motor(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel);
-    motor();
     void direction(Direction dir);
     void power(uint8_t pow);
     void fastStop();
     void softStop();
-    void setUP(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel);
 };
 
 
 motor::motor(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel) : in1(in1), in2(in2), pwmPin(pwmPin), pwmChannel(pwmChannel) {
     pinMode(this->in1, OUTPUT);
     pinMode(this->in2, OUTPUT);
-    ledcSetup(this->pwmChannel, 2000, 8);
-    ledcAttachPin(this->pwmPin, this->pwmChannel);
-    softStop();
-}
-
-motor::motor() {}
-
-void motor::setUP(uint8_t in1, uint8_t in2, uint8_t pwmPin, uint8_t pwmChannel) {
-    this->in1 = in1;
-    this->in2 = in2;
-    this->pwmPin = pwmPin;
-    this->pwmChannel = pwmChannel;
-
-    pinMode(this->in1, OUTPUT);
-    pinMode(this->in2, OUTPUT);
     pinMode(this->pwmPin, OUTPUT);
-    ledcSetup(this->pwmChannel, 2000, 8); //8bit 2000Hz
-
+    ledcSetup(this->pwmChannel, 2000, 8);
     gpio_matrix_out(this->pwmPin, LEDC_HS_SIG_OUT0_IDX + this->pwmChannel, false, false); //attach pin
     softStop();
 }
+
 
 void motor::direction(Direction dir) {
     if(static_cast<uint8_t>(dir)) {
