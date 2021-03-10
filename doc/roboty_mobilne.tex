@@ -1,0 +1,229 @@
+\documentclass[10pt, a4paper]{article}
+
+\include{preambula}
+	
+\begin{document}
+
+\def\tablename{Tabela}
+
+\begin{titlepage}
+	\begin{center}
+		\textsc{\LARGE Projekt}\\[1cm]		
+		\textsc{\Large Roboty Mobilne}\\[0.5cm]		
+		\rule{\textwidth}{0.08cm}\\[0.4cm]
+		{\huge \bfseries Założenia projektowe}\\[1cm]
+		{\huge \bfseries Robot gąsienicowy}\\[0.5cm]
+		{\huge \bfseries ReTank}\\[0.4cm]
+		\rule{\textwidth}{0.08cm}\\[1cm]
+		
+		\begin{flushright} \large
+		\emph{Przygotował:}\\
+		Marcin Bober, 249426
+		
+		\emph{Termin: }srTN18\\[0.4cm]
+
+		\emph{Prowadzący:} \\
+		mgr inż. Arkadiusz Mielczarek \\
+		
+		\end{flushright}
+		
+		\vfill
+		
+		{\large \today}
+	\end{center}	
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Opis projektu}
+\label{sec:OpisProjektu}
+
+Projekt dotyczy budowy robota mobilnego, sterowanego zdalnie. 
+Zadanie obejmuje zaprojektowanie części elektronicznej, oprogramowania na mikrokontroler i oprogramowania na urządzenie sterujące. 
+W skład części elektronicznej wchodzi projekt płytki drukowanej i banku energii.
+
+
+\section{Bank energii}
+
+\subsection{Ogniwa}
+
+Zasilania robotowi zapewniać będą trzy ogniwa 16850. 
+Aby minimalzować koszty, zostały one pozyskane ze starej baterii z laptopa. 
+Nie są one dobrze opisane co sprawia że nie jestem w stanie odnaleźć ich specyfikacji.
+Ich żywotność również jest nie znana, co uniemożliwia oszacowanie ich łącznej pojemności.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{figures/ogniwa.jpg}
+	\caption{Ogniwa 16850}
+	\label{fig:ogniwa}
+\end{figure}
+
+
+
+\subsection{Balanser}
+
+Do zarządzania ogniwami użyty zostanie gotowy układ BMS przystosowany do współpracy z trzema ogniwami 16850. 
+Zapewnia on podstawowe zabezpieczenia w tym:
+
+\begin{itemize}
+	\item zabezpieczenie przed nadmiernym rozładowaniem poniżej 3.0V,
+	\item zabezpieczenie przed przeładowaniem powyżej 4.25V,
+	\item zabezpieczenie przed przeciążeniem prądowym,
+	\item zabezpieczenie przed zwarciem.
+\end{itemize}
+
+Napięcie generowane przez baterię ogniw powinno oscylować w zakresie 9.0V - 12.7V
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{figures/bms.jpg}
+	\caption{Balanser baterii}
+	\label{fig:bms}
+\end{figure}
+
+
+\section{Płytka drukowana}
+Jednym z podstawowych elementów projektu jest stworzenie płytki drukowanej integrującej wszystkie wymagane elementy.
+
+\subsection{Mikrokontroler}
+Sercem układu zostanie układ ESP32-WROVER. 
+Najważniejszym kryterium decydującym o wyborze tego konkretnego układu jest wbudowany modu WiFi i jego niska cena oscylująca w okolicach 2.50\$.
+Jest to zdecydowanie najtańszy sposób na połączenia robota do Internetu.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.65\textwidth]{figures/esp.jpg}
+	\caption{Mikrokontroler ESP32}
+	\label{fig:esp32}
+\end{figure}
+
+Najważniejsze cechy:
+\begin{itemize}
+	\item Wbudowany MCU o dwóch rdzeniach z taktowaniem do 240 MHz
+	\item Protokoły Wi-Fi: 802.11 b/g/n/d/e/i/k/r
+	\item Protokoły BT: Bluetooth v4.2 BR/EDR oraz Bluetooth BLE
+	\item Napięcie zasilania: 2.2 V - 3.6 V
+	\item Średni pobór prądu: 80 mA
+\end{itemize}
+
+\subsection{Sterowniki silników}
+Układ będzie wspierał sterowanie dwoma silnikami prądu stałego. 
+Każdy z nich będzie mógłbyć wyposarzony w osobny enkoder liczący obroty silnika.
+Do tego celu posłuży układa L298N w obudowie Multiwatt 15 pin.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.65\textwidth]{figures/l298.jpg}
+	\caption{Układ scalony L298N}
+	\label{fig:l298n}
+\end{figure}
+
+\subsection{Akcelereometr}
+Robot będzie wyposarzony w akcelerometr i żyroskop, aby móc mierzyć przyspieszenia oraz prędkości kątowe.
+Będzie to możliwe dzięki użyciu układu MPU-6050.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/mpu6050.png}
+	\caption{Układ scalony MPU6050}
+	\label{fig:mpu6050}
+\end{figure}
+
+\subsection{Inne}
+Aby móc komfortowo użytkować i prototypować robota niezbędne będą dodatkowe elementy takie jak:
+\begin{itemize}
+	\item wyprowadzenie JATG,
+	\item wyprowadzenie interfejsu I2C,
+	\item wyprowadzenie kamery ArduCam OV2640,
+	\item wyprowadzenie UART,
+	\item wejście zasilania,
+	\item złącze czujnika ultradzwiękowego,
+	\item dwa wejścia enkoderów,
+	\item dwa wyjścia na silniki.
+\end{itemize}
+
+\section{Mechanika}
+\subsection{Podwozie}
+Aby zredukować koszty i lepiej zintegrować wszystkie elementy ze sobą,
+postanowiłem samemu zaprojektować podwozie i wydrukować je przy użyciu drukarki 3D.
+Materiał który do tego użyję to ABS.
+% Na początku planowania projektu miałem zamiar zaprojektować własne podwozie, 
+% ale koszty silników z enkoderami były bardzo duże. Bardziej opłacalne okazały się gotowe zestawy,
+% więc zdecydowałem że jako podwozie zostanie użyty zestaw "4WD Smart Robot Car Chassis Kits".
+% Jest to najbardziej opłacalne rozwiązanie.
+
+\subsection{Silniki}
+Silniki których użyję są produkcji DFRobot. Mają one doczepione enkodery, 
+które pozwolą mi bardzo dokładnie kontorlować prędkości silników.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{figures/silnik.png}
+	\caption{Silnik z enkoderem}
+	\label{fig:silnk}
+\end{figure}
+
+Ich skrócona specyfikacja:
+\begin{itemize}
+	\item Napięcie zasilania: 6 V
+	\item Napięcie enkodera: od 3,3 V do 5 V
+	\item Współczynnik redukcji: 1:20
+	\item Prędkość bez obciążenia: 300 RPM - 0,1 A
+\end{itemize}
+
+\section{Harmonogram}
+\begin{enumerate}
+	\item Sporządzenie listy i zdobycie wymaganych elementów. (17.03)
+	\item Zaprojektowanie i wykonanie podwozia. (24.03)
+	\item Zaprojektowanie i wykonanie pakietu baterii. (31.03)
+	\item Zaprojektowanie płytki drukowanej. (7.04)
+	\item Napisanie i przetestowanie bazowej wersji programu na MCU. (14.04)
+	\item Zbudowanie komunikacji z kontrolerem. (21.04)
+	\item Dodanie obsługi enkoderów. (28.04)
+	\item Dodanie obsługi żyroskopu. (5.05)
+	\item Testowanie i dopieszczanie. (12.05)
+\end{enumerate}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
