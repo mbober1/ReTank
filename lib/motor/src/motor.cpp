@@ -1,7 +1,7 @@
 #include "motor.hpp"
 
 
-motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, uint8_t encoderB, uint8_t pwmChannel, pcnt_unit_t pcntUnit) : in1(in1), in2(in2), pwmPin(pwmPin), pwmChannel(pwmChannel), encoderA(encoderA), encoderB(encoderB) {
+motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, uint8_t encoderB, uint8_t pwmChannel, pcnt_unit_t pcntUnit, pcnt_unit_t pcntUnit2) : in1(in1), in2(in2), pwmPin(pwmPin), pwmChannel(pwmChannel), encoderA(encoderA), encoderB(encoderB) {
     gpio_pad_select_gpio(this->in1);
     gpio_pad_select_gpio(this->in2);
     gpio_set_direction(this->in1, GPIO_MODE_OUTPUT);
@@ -23,24 +23,44 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
     
     ledc_channel_config(&ledc_channel);
 
+
+
     this->encoder = pcntUnit;
     pcnt_config_t pcnt_config;
     pcnt_config.pulse_gpio_num = this->encoderA;
-    pcnt_config.ctrl_gpio_num = this->encoderB;
+    pcnt_config.ctrl_gpio_num = PCNT_PIN_NOT_USED;
     pcnt_config.channel = PCNT_CHANNEL_0;
     pcnt_config.unit = this->encoder;
     pcnt_config.pos_mode = PCNT_COUNT_INC;
-    pcnt_config.neg_mode = PCNT_COUNT_DIS;
-    pcnt_config.lctrl_mode = PCNT_MODE_REVERSE;
+    pcnt_config.neg_mode = PCNT_COUNT_INC;
+    pcnt_config.lctrl_mode = PCNT_MODE_KEEP;
     pcnt_config.hctrl_mode = PCNT_MODE_KEEP;
     pcnt_unit_config(&pcnt_config);
-    // pcnt_set_filter_value(this->encoder, 100);
-    pcnt_filter_enable(this->encoder);
     pcnt_counter_pause(this->encoder);
     pcnt_counter_clear(this->encoder);
     pcnt_counter_resume(this->encoder);
 
+    this->encoder2 = pcntUnit2;
+    pcnt_config_t pcnt_config2;
+
+    pcnt_config2.pulse_gpio_num = this->encoderB;
+    pcnt_config2.ctrl_gpio_num = PCNT_PIN_NOT_USED;
+    pcnt_config2.channel = PCNT_CHANNEL_0;
+    pcnt_config2.unit = this->encoder2;
+    pcnt_config2.pos_mode = PCNT_COUNT_INC;
+    pcnt_config2.neg_mode = PCNT_COUNT_INC;
+    pcnt_config2.lctrl_mode = PCNT_MODE_KEEP;
+    pcnt_config2.hctrl_mode = PCNT_MODE_KEEP;
+    pcnt_unit_config(&pcnt_config2);
+    pcnt_counter_pause(this->encoder2);
+    pcnt_counter_clear(this->encoder2);
+    pcnt_counter_resume(this->encoder2);
+
     softStop();
+
+    this->integralError = 0;
+    this->lastError = 0;
+
 }
 
 
@@ -73,22 +93,26 @@ void motor::power(uint16_t pow) {
 
 
 
-int motor::compute() {
+double motor::compute() {
     int64_t currentTime = esp_timer_get_time();
     int64_t elapsedTime = currentTime - this->previousTime;
-    int16_t input;
-    pcnt_get_counter_value(encoder, &input);
+    int16_t input[2];
+    int16_t inputS;
+    pcnt_get_counter_value(encoder, input);
+    pcnt_get_counter_value(encoder2, input + 1);
+    inputS = input[0] + input[1];
     double kp = 1;
-    double ki = 0;
-    double kd = 0;
+    double ki = 0.01;
+    double kd = 0.1;
 
-    int error = this->setpoint - input;
+    int error = this->setpoint - inputS;
     this->integralError += error * elapsedTime; //calka
+    if(this->integralError > 200) this->integralError = 400;
+    if(this->integralError < -200) this->integralError = -400;
     this->derivativeError = (error - this->lastError)/elapsedTime; //pochodna
-    //dodać ograniczenie na całkę
-    //dodać ograniczenie na wyjście
     this->lastError = error;
     this->previousTime = currentTime;
     pcnt_counter_clear(encoder);
+    pcnt_counter_clear(encoder2);
     return kp*error + ki*this->integralError + kd*this->derivativeError;    
 }

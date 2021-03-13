@@ -6,7 +6,6 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
-// #include "rotary_encoder.h"
 #include "driver/pcnt.h"
 
 
@@ -21,34 +20,13 @@
 // int button = 0;
 
   // WiFiUDP client;
-  // robot Robot(16, 17, 4, 0, 5, 18, 22, 2);
 
   // int left, right;
   // char packetBuffer[255];
 
-// void IRAM_ATTR sram() {
-//   int64_t start =  esp_timer_get_time();
-//   int64_t stop = start;
-
-//   while (!((GPIO.in >> ENC_A) & 1)) {
-//       // if((GPIO.in >> ENC_B) & 1) dir = 1;
-//       // else dir = 0;
-//   }
-
-
-//   stop = esp_timer_get_time();
-//   uint32_t stopwatch = stop - start;
-
-//   if(stopwatch > shortClick && stopwatch < longClick) button++;
-// }
 
 
 // void setup() {
-  // attachInterrupt(ENC_A, sram, FALLING);
-
-
-  // Serial.begin(115200);
-
   // WiFi.mode(WIFI_STA);
   // WiFi.begin(ssid, password);
   // while (WiFi.status() != WL_CONNECTED) {};
@@ -98,24 +76,28 @@
 int left;
 int right;
 int previousTime;
+int previousTime2;
 
 extern "C" void app_main()
 {
-    robot Robot(GPIO_NUM_5, GPIO_NUM_18, 19, 0, GPIO_NUM_17, GPIO_NUM_16, 4, 25, 26, 27, 21, PCNT_UNIT_0, PCNT_UNIT_1);
+    robot Robot(GPIO_NUM_5, GPIO_NUM_18, 19, 0, GPIO_NUM_17, GPIO_NUM_16, 4, 33, 26, 32, 27, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
 
     while (1) {
         Robot.autos();        
 
         vTaskDelay(pdMS_TO_TICKS(10));
         int64_t currentTime = esp_timer_get_time();
-        if(currentTime - previousTime > 1000000) {
-            
+        if(currentTime - previousTime > 100000) {
             previousTime = currentTime;
+            printf("Setpoint: %d, ENC: %d, Error: %f\n", left, input1 + input2, e1);
+        }
+
+        if(currentTime - previousTime2 > 1000000) {
+            previousTime2 = currentTime;
             left ++;
             right ++;
-            if(left > 14) left = 0;
-            if(right > 14) right = 0;
-            printf("L: %d\n", left);
+            if(left > 30) left = 0;
+            if(right > 30) right = 0;
             Robot.setPoint(left, right);
         }
     }
