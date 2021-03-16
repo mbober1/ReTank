@@ -1,4 +1,4 @@
-# ReTank - DIY remote controlled tank.
+# ReTank - DIY remote controlled tank. :blue_car:
 
 # Usage
 
