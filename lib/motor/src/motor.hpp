@@ -10,9 +10,6 @@ enum class Direction {
     BACKWARD
 };
 
-#define MAX (2<<16)
-#define MIN -(2<<16)
-
 class motor
 {
 private:
