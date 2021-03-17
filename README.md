@@ -30,7 +30,7 @@
 </details>
 
 <details>
-<summary>2x FIT0520 DFROBOT DC motor</summary>
+<summary>2x FIT0520 DFROBOT DC motors</summary>
 <p></p>
 </details>
 
@@ -44,12 +44,12 @@
 The software controls the robot based on signals sent from the RoboVision program
 https://github.com/mbober1/RoboVision
 
-## Planned features
+## Features
 - [X] DIY energy pack
+- [X] WiFi connection
 - [ ] PID motor power controler
-- [ ] WiFi connection
 - [ ] RoboVision integration
 - [ ] Circuit board design
-- [ ] chassis design
+- [ ] Chassis design
 
 
