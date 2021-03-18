@@ -6,8 +6,9 @@
 class robot
 {
 private:
-    motor* engine;
 public:
+    motor* engine;
+
     robot(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t pwmChannel, gpio_num_t in3, gpio_num_t in4, uint8_t pwmPin2, uint8_t encoder1A, uint8_t encoder1B, uint8_t encoder2A, uint8_t encoder2B, pcnt_unit_t pcntUnit1, pcnt_unit_t pcntUnit2, pcnt_unit_t pcntUnit3, pcnt_unit_t pcntUnit4);
     void drive(int left, int right);
     void autos();
@@ -44,9 +45,9 @@ void robot::setPoint(uint16_t s1, uint16_t s2) {
 void robot::autos() {
 
     pcnt_get_counter_value(this->engine[0].encoder, &input1);
-    pcnt_get_counter_value(this->engine[0].encoder2, &input2);
+    // pcnt_get_counter_value(this->engine[0].encoder2, &input2);
     e1 = this->engine[0].compute();
     e2 = this->engine[1].compute();
 
-    this->drive((int)e1, (int)e2);
+    this->drive(((int)e1), ((int)e2));
 }
