@@ -4,21 +4,73 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <udp.hpp>
-#include <wifi.hpp>
-#include <robot.hpp>
-#include <I2Cbus.hpp>
-#include <MPU.hpp>
+// #include <udp.hpp>
+// #include <wifi.hpp>
+// #include <robot.hpp>
+// #include <I2Cbus.hpp>
+// #include <MPU.hpp>
 #include "esp_log.h"
 #include "esp_err.h"
 
-#include "mpu/math.hpp"
-#include "mpu/types.hpp"
+// #include "mpu/math.hpp"
+// #include "mpu/types.hpp"
+
+
+#include <camera.hpp>
+
 // int left;
 // int right;
 // int previousTime;
 // int previousTime2;
 // int16_t input[4];
+
+// void upload_image(uint8_t *buffer, uint32_t length){
+// 	esp_err_t err;
+// 	uint32_t lengthWithMac = length+6;
+// 	uint8_t *macAndCheese = malloc(lengthWithMac);
+// 	memset((void*)macAndCheese, 0, lengthWithMac);
+// 	err = esp_efuse_mac_get_default(macAndCheese);
+// 	memcpy((void*)macAndCheese+6, (void*)buffer, length);
+// 	esp_http_client_config_t config = {
+// 		.url = "https://robotany.queueunderflow.com/api/dataUpload/v1/uploadImage",
+// 		.event_handler = _http_event_handler,
+// 		.method = HTTP_METHOD_POST,
+//     };
+//     esp_http_client_handle_t client = esp_http_client_init(&config);
+// 	esp_http_client_set_post_field(client, (const char*)macAndCheese, lengthWithMac);
+// 	esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
+// 	err = esp_http_client_perform(client);
+// 	if (err == ESP_OK) {
+// 		ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
+// 				esp_http_client_get_status_code(client),
+// 				esp_http_client_get_content_length(client));
+// 	} else {
+// 		ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+// 	}
+// 	esp_http_client_cleanup(client);
+// 	free(macAndCheese);
+// }
+
+
+void capture_image(uint8_t **buffer, camera Cam){
+	Cam.start_capture();
+	// TODO: Read the done flag.
+	while(!Cam.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
+	uint32_t fifo_length = Cam.read_fifo_length();
+	printf("FIFO Length: %d\n", fifo_length);
+	if(fifo_length == 0){
+		printf("FIFO length not set.\n");
+	}
+	
+	uint32_t bufferLength = 0;
+	Cam.image_read(fifo_length, buffer, &bufferLength);
+	
+	// upload_image(*buffer, bufferLength);
+
+	return;
+}
+
+
 
 
 extern "C" void app_main()
@@ -27,51 +79,57 @@ extern "C" void app_main()
     // initialise_wifi();
 
     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+    camera Cam;
+    // Cam.cam_init();
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+	// int i = 0;
 
-    I2C_t myI2C(I2C_NUM_0);
-    MPU_t MPU;
-
-    myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
-    myI2C.scanner();
-
-    MPU.setBus(i2c0);
-    MPU.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
-
-    
-    while (esp_err_t err = MPU.testConnection()) {
-        printf("Failed to connect to the MPU, error=%#X", err);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-    printf("MPU connection successful!");
-
-
-    ESP_ERROR_CHECK(MPU.initialize());
+    // while (1) {
+	// 	printf("[%d] Captured!\n", i);
+	// 	i++;
+	// 	uint8_t *rxBuf;
+	// 	capture_image(&rxBuf, Cam);
+	// 	free(rxBuf);
+    //     printf("Sleeping...\n");
+	// 	vTaskDelay((10*1000) / portTICK_PERIOD_MS);
+	// }
+    // I2C_t myI2C(I2C_NUM_0);
+    // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
+    // myI2C.scanner();
 
 
-    MPU.setSampleRate(250);  // in (Hz)
-    MPU.setAccelFullScale(mpud::ACCEL_FS_4G);
-    MPU.setGyroFullScale(mpud::GYRO_FS_500DPS);
-    MPU.setDigitalLowPassFilter(mpud::DLPF_42HZ);  // smoother data
-    MPU.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);  // enable INT pin
+    // MPU_t MPU;
+    // MPU.setBus(i2c0);
+    // MPU.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
 
-    printf("Reading sensor data:\n");
-    mpud::raw_axes_t accelRaw;   // x, y, z axes as int16
-    mpud::raw_axes_t gyroRaw;    // x, y, z axes as int16
-    mpud::float_axes_t accelG;   // accel axes in (g) gravity format
-    mpud::float_axes_t gyroDPS;  // gyro axes in (DPS) º/s format
-    while (true) {
-        // Read
-        MPU.acceleration(&accelRaw);  // fetch raw data from the registers
-        MPU.rotation(&gyroRaw);       // fetch raw data from the registers
-        // MPU.motion(&accelRaw, &gyroRaw);  // read both in one shot
-        // Convert
-        accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);
-        gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);
-        // Debug
-        printf("accel: [%+6.2f %+6.2f %+6.2f ] (G) \t", accelG.x, accelG.y, accelG.z);
-        printf("gyro: [%+7.2f %+7.2f %+7.2f ] (º/s)\n", gyroDPS[0], gyroDPS[1], gyroDPS[2]);
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
+    // ESP_ERROR_CHECK(MPU.testConnection());
+    // ESP_ERROR_CHECK(MPU.initialize());
+
+
+    // MPU.setSampleRate(250);  // in (Hz)
+    // MPU.setAccelFullScale(mpud::ACCEL_FS_4G);
+    // MPU.setGyroFullScale(mpud::GYRO_FS_500DPS);
+    // MPU.setDigitalLowPassFilter(mpud::DLPF_42HZ);  // smoother data
+    // MPU.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);  // enable INT pin
+
+    // printf("Reading sensor data:\n");
+    // mpud::raw_axes_t accelRaw;   // x, y, z axes as int16
+    // mpud::raw_axes_t gyroRaw;    // x, y, z axes as int16
+    // mpud::float_axes_t accelG;   // accel axes in (g) gravity format
+    // mpud::float_axes_t gyroDPS;  // gyro axes in (DPS) º/s format
+    // while (true) {
+    //     // Read
+    //     MPU.acceleration(&accelRaw);  // fetch raw data from the registers
+    //     MPU.rotation(&gyroRaw);       // fetch raw data from the registers
+    //     // MPU.motion(&accelRaw, &gyroRaw);  // read both in one shot
+    //     // Convert
+    //     accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);
+    //     gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);
+    //     // Debug
+    //     printf("accel: [%+6.2f %+6.2f %+6.2f ] (G) \t", accelG.x, accelG.y, accelG.z);
+    //     printf("gyro: [%+7.2f %+7.2f %+7.2f ] (º/s)\n", gyroDPS[0], gyroDPS[1], gyroDPS[2]);
+    //     vTaskDelay(100 / portTICK_PERIOD_MS);
+    // }
 
     // while (1) {
         
