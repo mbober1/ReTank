@@ -15,8 +15,6 @@
  #include "esp_err.h"
  #include "sdkconfig.h"
 
-#include <SPIbus.hpp>
-
 // SPI MISO = GPIO 19
 #define CAM_MISO_PIN GPIO_NUM_19
 // SPI MOSI = GPIO 23
@@ -77,11 +75,11 @@
 
 #define I2C_ADDRESS             0x60
 
+extern spi_device_handle_t spiiii;
+
 class camera
 {
 private:
-    spi_device_handle_t spiiii;
-
     // SPI Base operations
     esp_err_t bus_write(uint8_t addr, uint8_t data);
     uint8_t bus_read(uint8_t addr);

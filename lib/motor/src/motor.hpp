@@ -17,8 +17,8 @@ private:
     uint8_t pwmPin, pwmChannel, encoderA, encoderB;
     // double kp, ki, kd;
     int64_t previousTime, lastError, integralError, derivativeError;
-    ledc_channel_config_t ledc_channel;
-    ledc_timer_config_t ledc_timer;
+    ledc_channel_config_t ledc_channel = {};
+    ledc_timer_config_t ledc_timer = {};
     
 public:
     uint16_t setpoint;

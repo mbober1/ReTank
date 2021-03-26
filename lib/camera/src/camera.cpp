@@ -4,91 +4,69 @@
 camera::camera(){
 	uint8_t vid, pid, temp;
 
-	SPI_t &mySPI = vspi;
-	// esp_err_t ret = mySPI.begin(CAM_MOSI_PIN, CAM_MISO_PIN, CAM_SCK_PIN, MAX_FIFO_SIZE+1);
-
-	spi_bus_config_t spi_cam_bus;
+	spi_bus_config_t spi_cam_bus = {};
 	spi_cam_bus.miso_io_num = CAM_MISO_PIN;
 	spi_cam_bus.mosi_io_num = CAM_MOSI_PIN;
 	spi_cam_bus.sclk_io_num = CAM_SCK_PIN;
 	spi_cam_bus.quadwp_io_num = -1;
 	spi_cam_bus.quadhd_io_num = -1;
-	// spi_cam_bus.intr_flags = 0;
 	spi_cam_bus.max_transfer_sz = MAX_FIFO_SIZE+1;
 
 
 	printf("Initializing SPI bus.\n");
-	esp_err_t ret = spi_bus_initialize(VSPI_HOST, &spi_cam_bus, 1);
-	printf("kurwaaaaaaa %d: %s\n\n\r", ret, esp_err_to_name(ret));
-	ESP_ERROR_CHECK(ret);
-
-	vTaskDelay(2000 / portTICK_PERIOD_MS);
+	ESP_ERROR_CHECK(spi_bus_initialize(VSPI_HOST, &spi_cam_bus, 1));
 
 
-	// spi_device_interface_config_t cam_device_config;
-	// cam_device_config.mode = 0;
-	// cam_device_config.queue_size=1;
-	// cam_device_config.spics_io_num=5;
-	// cam_device_config.clock_speed_hz=4000000; // 4MHz
+	spi_device_interface_config_t cam_device_config = {};
+	cam_device_config.mode = 0;
+	cam_device_config.queue_size=1;
+	cam_device_config.spics_io_num=5;
+	cam_device_config.clock_speed_hz= SPI_MASTER_FREQ_8M; // 4MHz
 
-	// cam_device_config.command_bits = 0;
-    // cam_device_config.address_bits = 8;
-    // cam_device_config.dummy_bits = 0;
-    // cam_device_config.duty_cycle_pos = 128;  // default 128 = 50%/50% duty
-    // cam_device_config.cs_ena_pretrans = 0;  // 0 not used
-    // cam_device_config.cs_ena_posttrans = 0;  // 0 not used
-    // cam_device_config.flags = 0;  // 0 not used
-    // cam_device_config.pre_cb = NULL;
-    // cam_device_config.post_cb = NULL;
+	printf("Initializing SPI device.\n");
+	ESP_ERROR_CHECK(spi_bus_add_device(VSPI_HOST, &cam_device_config, &spiiii));
+	// spi_get_actual_clock(APB_CLK_FREQ, 4000000, );
 
-
-
-	printf("Initializing SPI device.\n\r\n");
-	mySPI.addDevice((uint8_t)0, (uint32_t)4000000, 5, &spiiii);
-	// ret = spi_bus_add_device(VSPI_HOST, &cam_device_config, &spiiii);
-	ESP_ERROR_CHECK(ret);
-	printf("kurwaaaaaaa2 %d: %s\n\n\r", ret, esp_err_to_name(ret));
 
 	bus_write(ARDUCHIP_TEST1, 0x55);
 	temp = bus_read(ARDUCHIP_TEST1);
-	if (temp != 0x55)
-	{
-		//print error to serial
-		printf("Failed to access camera buffer. %d\n", temp);
-		// while (1);
-	}
+	if (temp != 0x55) printf("Failed to access camera buffer. %d\n\n", temp);
+	else printf("Access to camera buffer succeded\n\n");
 
 	// // Initialize I2C
-	// i2c_config_t i2c_connection;
-	// i2c_connection.mode = I2C_MODE_MASTER;
-	// i2c_connection.sda_io_num = CAM_SDA_PIN;
-	// i2c_connection.sda_pullup_en = GPIO_PULLUP_ENABLE;
-	// i2c_connection.scl_io_num = CAM_SCL_PIN;
-	// i2c_connection.scl_pullup_en = GPIO_PULLUP_ENABLE;
-	// i2c_connection.master.clk_speed = I2C_MASTER_FREQ;
+	printf("Initializing I2C connection.\n");
+	i2c_config_t i2c_connection = {};
+	i2c_connection.mode = I2C_MODE_MASTER;
+	i2c_connection.sda_io_num = CAM_SDA_PIN;
+	i2c_connection.sda_pullup_en = GPIO_PULLUP_ENABLE;
+	i2c_connection.scl_io_num = CAM_SCL_PIN;
+	i2c_connection.scl_pullup_en = GPIO_PULLUP_ENABLE;
+	i2c_connection.master.clk_speed = I2C_MASTER_FREQ;
 
-	// i2c_param_config(I2C_NUM_0, &i2c_connection);
-	// i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0);
+	ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &i2c_connection));
+	ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0));
 
-	// // ensure the camera module is OV2640
-	// write_sensor_reg(0xff, 0x01);
-	// read_sensor_reg(OV2640_CHIPID_HIGH, &vid);
-	// read_sensor_reg(OV2640_CHIPID_LOW, &pid);
-	// if ((vid != 0x26) && (pid != 0x42)){
-	// 	// print to serial "can't find module"
-	// 	printf("Camera not OV2640.\n");
-	// }
-	// else{
-	// 	// print success to serial
-	// 	printf("Found OV2640 camera.\n");
-	// }
+	write_sensor_reg(0xff, 0x01);
+	// write_sensor_reg(0x12, 0x80);
+	vTaskDelay(pdMS_TO_TICKS(100));
+
+	read_sensor_reg(OV2640_CHIPID_HIGH, &vid);
+	read_sensor_reg(OV2640_CHIPID_LOW, &pid);
+
+	if ((vid != 0x26) && (pid != 0x42)){
+		printf("Camera not OV2640. VID: %d, PID: %d ADDR: %d\n\n", vid, pid, I2C_ADDRESS);
+	}
+	else{
+		// print success to serial
+		printf("Found OV2640 camera.\n\n");
+	}
 	// // change capture mode to JPEG and initialize
-	// init_cam_regs(JPEG);
+	init_cam_regs(JPEG);
 	
-	// // OV2640_set_JPEG_size(OV2640_1280x1024_JPEG);
+	// OV2640_set_JPEG_size(OV2640_1280x1024_JPEG);
 	
-	// // clear FIFO flag
-	// clear_fifo_flag();
+	// clear FIFO flag
+	clear_fifo_flag();
 }
 
 uint8_t camera::bus_read(uint8_t addr){
@@ -103,7 +81,7 @@ uint8_t camera::bus_read(uint8_t addr){
 	getData.rxlength = 16;
 	getData.user=(void*)0;
 	getData.flags = SPI_TRANS_USE_RXDATA;
-	ret = spi_device_polling_transmit(this->spiiii, &getData);
+	ret = spi_device_polling_transmit(spiiii, &getData);
 	ESP_ERROR_CHECK(ret);
 	return getData.rx_data[1];
 }
@@ -131,7 +109,7 @@ void camera::image_read(uint32_t fifoLength, uint8_t **rxBuf, uint32_t *rxLen){
 	getImage.rx_buffer = tempBuf;
 
 	printf("About to poll...\n");
-	ret = spi_device_polling_transmit(this->spiiii, &getImage);
+	ret = spi_device_polling_transmit(spiiii, &getImage);
 	ESP_ERROR_CHECK(ret);
 
 	printf("Transferring to temp buffer...\n");
@@ -178,7 +156,7 @@ esp_err_t camera::bus_write(uint8_t addr, uint8_t data){
 	setData.length = 16;
 	setData.tx_buffer = modelAddr;
 	setData.user=(void*)0;
-	ret = spi_device_polling_transmit(this->spiiii, &setData);
+	ret = spi_device_polling_transmit(spiiii, &setData);
 	return ret;
 }
 
@@ -261,7 +239,7 @@ void camera::set_fifo_burst() {
 	setData.length = 8;
 	setData.tx_buffer = modelAddr;
 	setData.user=(void*)0;
-	spi_device_polling_transmit(this->spiiii, &setData);
+	spi_device_polling_transmit(spiiii, &setData);
 }
 
 void camera::OV2640_set_JPEG_size(){

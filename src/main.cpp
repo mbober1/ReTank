@@ -17,7 +17,6 @@
 
 
 #include <adc.hpp>
-
 #include <camera.hpp>
 
 // int left;
@@ -66,21 +65,24 @@ void capture_image(uint8_t **buffer, camera Cam){
 	
 	uint32_t bufferLength = 0;
 	Cam.image_read(fifo_length, buffer, &bufferLength);
+    printf("FIFO len %d, buffer len %d\n", fifo_length, bufferLength);
 	
 	// upload_image(*buffer, bufferLength);
 
 	return;
 }
 
+spi_device_handle_t spiiii;
+
 
 extern "C" void app_main()
 {
-    myADC battery;
+    // myADC battery;
 
-    while (1) {
-        printf("Voltage: %.2fV\n", battery.getVoltage());
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    // while (1) {
+    //     printf("Voltage: %.2fV\n", battery.getVoltage());
+    //     vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
 
 
 
@@ -89,20 +91,20 @@ extern "C" void app_main()
     // initialise_wifi();
 
     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
-    // camera Cam;
-    // Cam.cam_init();
-    // vTaskDelay(2000 / portTICK_PERIOD_MS);
-	// int i = 0;
 
-    // while (1) {
-	// 	printf("[%d] Captured!\n", i);
-	// 	i++;
-	// 	uint8_t *rxBuf;
-	// 	capture_image(&rxBuf, Cam);
-	// 	free(rxBuf);
-    //     printf("Sleeping...\n");
-	// 	vTaskDelay((10*1000) / portTICK_PERIOD_MS);
-	// }
+    camera Cam;
+    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+	int i = 0;
+
+    while (1) {
+		printf("[%d] Captured!\n", i);
+		i++;
+		uint8_t *rxBuf;
+		capture_image(&rxBuf, Cam);
+		free(rxBuf);
+        printf("Sleeping...\n");
+		vTaskDelay((10*1000) / portTICK_PERIOD_MS);
+	}
     // I2C_t myI2C(I2C_NUM_0);
     // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
     // myI2C.scanner();

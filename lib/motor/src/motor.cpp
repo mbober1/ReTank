@@ -26,7 +26,7 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
 
 
     this->encoder = pcntUnit;
-    pcnt_config_t pcnt_config;
+    pcnt_config_t pcnt_config = {};
     pcnt_config.pulse_gpio_num = this->encoderA;
     pcnt_config.ctrl_gpio_num = this->encoderB;
     pcnt_config.channel = PCNT_CHANNEL_0;
@@ -48,7 +48,7 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
     this->encoder2 = pcntUnit;
 //␛[0;31mE (314) ledc: ledc_channel_config(380): gpio_num argument is invalid␛[0m
 // ␛[0;31mE (324) pcnt: _pcnt_set_event_value(197): PCNT limit value error␛[0m
-    pcnt_config_t pcnt_config2;
+    pcnt_config_t pcnt_config2 = {};
     pcnt_config2.pulse_gpio_num = this->encoderB;
     pcnt_config2.ctrl_gpio_num = this->encoderA;
     pcnt_config2.channel = PCNT_CHANNEL_1;
