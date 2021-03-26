@@ -72,7 +72,7 @@ camera::camera(){
 uint8_t camera::bus_read(uint8_t addr){
 	esp_err_t ret;
 	uint8_t modelAddr[2]; 
-	spi_transaction_t getData;
+	spi_transaction_t getData = {};
 	modelAddr[0] = (addr & 0x7F);
 	modelAddr[1] = 0x00;
 	memset(&getData, 0, sizeof(getData));
@@ -102,7 +102,7 @@ void camera::image_read(uint32_t fifoLength, uint8_t **rxBuf, uint32_t *rxLen){
 		while(1);
 	}
 
-	spi_transaction_t getImage;
+	spi_transaction_t getImage = {};
 	getImage.length = (fifoLength+1)*8;
 	getImage.tx_buffer = txBuf;
 	getImage.user = (void*)0;
@@ -124,7 +124,7 @@ void camera::image_read(uint32_t fifoLength, uint8_t **rxBuf, uint32_t *rxLen){
 		}
 		if(copy){
 			tempBuf[length++] = curr;
-			printf("Byte copied: %02x, Index: %d\n", curr, length);
+			// printf("Byte copied: %02x, Index: %d\n", curr, length);
 		}
 		if(prev == 0xff && curr == 0xd9 && copy){
 			break;
@@ -148,7 +148,7 @@ void camera::image_read(uint32_t fifoLength, uint8_t **rxBuf, uint32_t *rxLen){
 esp_err_t camera::bus_write(uint8_t addr, uint8_t data){
 	// send transaction and check response
 	esp_err_t ret;
-	spi_transaction_t setData;
+	spi_transaction_t setData = {};
 	uint8_t modelAddr[2]; 
 	modelAddr[0] = (addr | 0x80);
 	modelAddr[1] = data;
@@ -232,7 +232,7 @@ int camera::read_fifo_length() {
 
 void camera::set_fifo_burst() {
 	// spi transfer 0x3c
-	spi_transaction_t setData;
+	spi_transaction_t setData  = {};
 	uint8_t modelAddr[1]; 
 	modelAddr[0] = 0x3C;
 	memset(&setData, 0, sizeof(setData));
