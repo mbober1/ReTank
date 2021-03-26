@@ -16,6 +16,8 @@
 // #include "mpu/types.hpp"
 
 
+#include <adc.hpp>
+
 #include <camera.hpp>
 
 // int left;
@@ -71,17 +73,25 @@ void capture_image(uint8_t **buffer, camera Cam){
 }
 
 
-
-
 extern "C" void app_main()
 {
+    myADC battery;
+
+    while (1) {
+        printf("Voltage: %.2fV\n", battery.getVoltage());
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+
+
+
     // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
     // initialise_wifi();
 
     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
-    camera Cam;
+    // camera Cam;
     // Cam.cam_init();
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    // vTaskDelay(2000 / portTICK_PERIOD_MS);
 	// int i = 0;
 
     // while (1) {
