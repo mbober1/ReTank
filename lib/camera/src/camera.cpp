@@ -14,7 +14,7 @@ camera::camera(){
 
 
 	printf("Initializing SPI bus.\n");
-	ESP_ERROR_CHECK(spi_bus_initialize(VSPI_HOST, &spi_cam_bus, 1));
+	ESP_ERROR_CHECK(spi_bus_initialize(VSPI_HOST, &spi_cam_bus, 0));
 
 
 	spi_device_interface_config_t cam_device_config = {};
@@ -61,6 +61,7 @@ camera::camera(){
 		printf("Found OV2640 camera.\n\n");
 	}
 	// // change capture mode to JPEG and initialize
+	// init_cam_regs(BMP);
 	init_cam_regs(JPEG);
 	
 	// OV2640_set_JPEG_size(OV2640_1280x1024_JPEG);
@@ -258,7 +259,7 @@ void camera::init_cam_regs(int format) {
 		write_many_sensor_regs(OV2640_JPEG);
 		write_sensor_reg(0xff, 0x01);
 		write_sensor_reg(0x15, 0x00);
-		write_many_sensor_regs(OV2640_640x480_JPEG);
+		write_many_sensor_regs(OV2640_320x240_JPEG);
 	} else {
 		write_many_sensor_regs(OV2640_QVGA);
 	}

@@ -67,6 +67,7 @@
 #define OV2640_1600x1200	8	//1600x1200
 
 #define MAX_FIFO_SIZE		0x5FFFF	//384KByte
+// #define MAX_FIFO_SIZE       0x7FFFFF
 #define ARDUCHIP_FIFO      		0x04  //FIFO and I2C control
 #define FIFO_CLEAR_MASK    		0x01
 #define FIFO_START_MASK    		0x02
