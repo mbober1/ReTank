@@ -9,6 +9,8 @@
 
 #define PORT 8090
 
+extern int left;
+extern int right;
 
 static void udp_server_task(void *pvParameters)
 {
@@ -62,13 +64,13 @@ static void udp_server_task(void *pvParameters)
                     switch (data.front())
                     {
                     case 'L':
-                        // left = std::atoi(parse.c_str());
-                        // printf("Left: %d\n", left);
+                        left = std::atoi(parse.c_str());
+                        printf("Left: %d\n", left);
                         break;
 
                     case 'R':
-                        // right = std::atoi(parse.c_str());
-                        // printf("Right: %d\n", right);
+                        right = std::atoi(parse.c_str());
+                        printf("Right: %d\n", right);
                         break;
 
                     default:

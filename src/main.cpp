@@ -4,8 +4,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// #include <udp.hpp>
-// #include <wifi.hpp>
+#include <udp.hpp>
+#include <tcp.hpp>
+#include <wifi.hpp>
 // #include <robot.hpp>
 // #include <I2Cbus.hpp>
 // #include <MPU.hpp>
@@ -17,10 +18,10 @@
 
 
 #include <adc.hpp>
-#include <camera.hpp>
+// #include <camera.hpp>
 
-// int left;
-// int right;
+int left;
+int right;
 // int previousTime;
 // int previousTime2;
 // int16_t input[4];
@@ -53,58 +54,60 @@
 // }
 
 
-void capture_image(uint8_t **buffer, camera Cam){
-	Cam.start_capture();
-	// TODO: Read the done flag.
-	while(!Cam.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
-	uint32_t fifo_length = Cam.read_fifo_length();
-	printf("FIFO Length: %d\n", fifo_length);
-	if(fifo_length == 0){
-		printf("FIFO length not set.\n");
-	}
+// void capture_image(uint8_t **buffer, camera Cam){
+// 	Cam.start_capture();
+// 	// TODO: Read the done flag.
+// 	while(!Cam.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
+// 	uint32_t fifo_length = Cam.read_fifo_length();
+// 	printf("FIFO Length: %d\n", fifo_length);
+// 	if(fifo_length == 0){
+// 		printf("FIFO length not set.\n");
+// 	}
 	
-	uint32_t bufferLength = 0;
-	Cam.image_read(fifo_length, buffer, &bufferLength);
-    printf("FIFO len %d, buffer len %d\n", fifo_length, bufferLength);
+// 	uint32_t bufferLength = 0;
+// 	Cam.image_read(fifo_length, buffer, &bufferLength);
+//     printf("FIFO len %d, buffer len %d\n", fifo_length, bufferLength);
 	
-	// upload_image(*buffer, bufferLength);
+// 	// upload_image(*buffer, bufferLength);
 
-	return;
-}
+// 	return;
+// }
 
-spi_device_handle_t spiiii;
+// spi_device_handle_t spiiii;
 
 
 extern "C" void app_main()
 {
-    // myADC battery;
+    initialise_wifi();
+    myADC battery;
+    xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
+    
 
-    // while (1) {
-    //     printf("Voltage: %.2fV\n", battery.getVoltage());
-    //     vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
+    while (1) {
+        // printf("Voltage: %.2fV\n", battery.getVoltage());
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 
 
 
 
     // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
-    // initialise_wifi();
 
-    // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
 
-    camera Cam;
+    // camera Cam;
     // vTaskDelay(2000 / portTICK_PERIOD_MS);
-	int i = 0;
+	// int i = 0;
 
-    while (1) {
-		printf("[%d] Captured!\n", i);
-		i++;
-		uint8_t *rxBuf;
-		capture_image(&rxBuf, Cam);
-		free(rxBuf);
-        printf("Sleeping...\n");
-		vTaskDelay((10*1000) / portTICK_PERIOD_MS);
-	}
+    // while (1) {
+	// 	printf("[%d] Captured!\n", i);
+	// 	i++;
+	// 	uint8_t *rxBuf;
+	// 	capture_image(&rxBuf, Cam);
+	// 	free(rxBuf);
+    //     printf("Sleeping...\n");
+	// 	vTaskDelay((10*1000) / portTICK_PERIOD_MS);
+	// }
     // I2C_t myI2C(I2C_NUM_0);
     // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
     // myI2C.scanner();
