@@ -10,6 +10,7 @@
 #define KEEPALIVE_COUNT             2
 
 extern QueueHandle_t batteryQueue;
+extern QueueHandle_t distanceQueue;
 
 static void clientConnected(const int sock);
 static void tcpServerTask(void* port);
@@ -98,7 +99,7 @@ void clientConnected(const int sock)
     int len;
     char rx_buffer[128];
 
-    int battery;
+    int battery, distance;
 
     do {
         len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
@@ -137,6 +138,11 @@ void clientConnected(const int sock)
         //sending
         if(xQueueReceive(batteryQueue, &battery, 0) == pdTRUE) {
             std::string data = BatteryPacket(battery).prepare();
+            send(sock, data.c_str(), data.size(), 0);
+        }
+
+        if(xQueueReceive(distanceQueue, &distance, 0) == pdTRUE) {
+            std::string data = DistancePacket(distance).prepare();
             send(sock, data.c_str(), data.size(), 0);
         }
 

@@ -86,8 +86,7 @@ static void batteryTask(void*) {
 
     while (1)
     {
-        float voltage = battery.getVoltage();
-        int percentage = 50;
+        int percentage = battery.getVoltage() * 25;
         // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
         xQueueSendToBack(batteryQueue, &percentage, 0);
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -101,7 +100,7 @@ static void distanceTask(void*) {
     while (1)
     {
         int distance = 51;
-        xQueueSendToBack(batteryQueue, &distance, 0);
+        xQueueSendToBack(distanceQueue, &distance, 0);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
     vTaskDelete(NULL);
@@ -115,6 +114,7 @@ extern "C" void app_main()
 
     engineQueue = xQueueCreate(10, sizeof(EnginePacket));
     batteryQueue = xQueueCreate(10, sizeof(int));
+    distanceQueue = xQueueCreate(10, sizeof(int));
 
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 5, NULL);
