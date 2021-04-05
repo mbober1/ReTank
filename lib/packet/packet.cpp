@@ -20,6 +20,9 @@ Packet* Packet::decode(std::string &data) {
 
         case 'E':
             return new EnginePacket(data);
+
+        case 'B':
+            return new BatteryPacket(data);
         
         default:
             return nullptr;
@@ -60,8 +63,13 @@ EnginePacket::~EnginePacket() {}
 
 EnginePacket::EnginePacket(const std::string &data)
 {
-    this->left = (int8_t)(data[1]);
-    this->right = (int8_t)(data[3]);
+    if(!data.empty()) {
+        int separator = data.find(' ');
+        std::string parse = data.substr(1, separator - 1);
+        this->left = std::atoi(parse.c_str());
+        parse = data.substr(separator + 1, data.find(';') - separator - 1);
+        this->right = std::atoi(parse.c_str());
+    }
 }
 
 char EnginePacket::getType() {
@@ -74,6 +82,33 @@ std::string EnginePacket::prepare() {
     tmp += this->left;
     tmp += ' ';
     tmp += this->right;
+    tmp += ';';
+    tmp += Packet::checksum(tmp);
+    return tmp;
+}
+
+
+
+BatteryPacket::BatteryPacket(const uint8_t &level) : level(level) {}
+BatteryPacket::~BatteryPacket() {}
+
+BatteryPacket::BatteryPacket(const std::string &data)
+{
+    if(!data.empty()) {
+        int separator = data.find(';');
+        std::string parse = data.substr(1, separator - 1);
+        this->level = std::atoi(parse.c_str());
+    }
+}
+
+char BatteryPacket::getType() {
+    return 'B';
+}
+
+std::string BatteryPacket::prepare() {
+    std::string tmp;
+    tmp += this->getType();
+    tmp += this->level;
     tmp += ';';
     tmp += Packet::checksum(tmp);
     return tmp;

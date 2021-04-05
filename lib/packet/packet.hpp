@@ -33,3 +33,14 @@ public:
     int right;
     virtual char getType();
 };
+
+
+class BatteryPacket : public Packet {
+public:
+    BatteryPacket(const std::string &data);
+    BatteryPacket(const uint8_t &level);
+    ~BatteryPacket();
+    virtual std::string prepare();
+    int level;
+    virtual char getType();
+};

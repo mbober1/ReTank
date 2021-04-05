@@ -1,3 +1,5 @@
+#define INCLUDE_vTaskSuspend 1
+
 #include <string>
 #include <stdio.h>
 #include "sdkconfig.h"
@@ -7,7 +9,7 @@
 #include <udp.hpp>
 #include <tcp.hpp>
 #include <wifi.hpp>
-// #include <robot.hpp>
+#include <robot.hpp>
 // #include <I2Cbus.hpp>
 // #include <MPU.hpp>
 #include "esp_log.h"
@@ -18,10 +20,10 @@
 
 
 #include <adc.hpp>
+
+
 // #include <camera.hpp>
 
-int left;
-int right;
 // int previousTime;
 // int previousTime2;
 // int16_t input[4];
@@ -75,24 +77,52 @@ int right;
 
 // spi_device_handle_t spiiii;
 
+static int udpPort = 8090;
+static int tcpPort = 8091;
+QueueHandle_t engineQueue, batteryQueue;
+
+static void batteryTask(void*) {
+    myADC battery;
+
+    while (1)
+    {
+        float voltage = battery.getVoltage();
+        int percentage = 50;
+        printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        xQueueSendToBack(batteryQueue, &percentage, 0);
+    }
+    vTaskDelete(NULL);
+}
+
 
 extern "C" void app_main()
 {
     initialise_wifi();
-    myADC battery;
-    xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
+    robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
+
+    engineQueue = xQueueCreate(10, sizeof(EnginePacket));
+    batteryQueue = xQueueCreate(10, sizeof(int));
+
+    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
+    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 5, NULL);
+    xTaskCreate(batteryTask, "batteryTask", 4096, NULL, 5, NULL);
+
+
     
 
     while (1) {
-        // printf("Voltage: %.2fV\n", battery.getVoltage());
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        EnginePacket dupa(0,0);
+        xQueueReceive(engineQueue, &dupa, portMAX_DELAY);
+        printf("L: %d, R: %d\n", dupa.left, dupa.right);
+
+        // Robot.setPoint(left/7, right/7);
+        // Robot.autos();
     }
 
 
 
 
-    // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
 
 
     // camera Cam;
