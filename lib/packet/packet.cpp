@@ -79,9 +79,9 @@ char EnginePacket::getType() {
 std::string EnginePacket::prepare() {
     std::string tmp;
     tmp += this->getType();
-    tmp += this->left;
+    tmp += std::to_string(this->left);
     tmp += ' ';
-    tmp += this->right;
+    tmp += std::to_string(this->right);
     tmp += ';';
     tmp += Packet::checksum(tmp);
     return tmp;
