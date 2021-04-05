@@ -108,7 +108,7 @@ char BatteryPacket::getType() {
 std::string BatteryPacket::prepare() {
     std::string tmp;
     tmp += this->getType();
-    tmp += this->level;
+    tmp += std::to_string(this->level);
     tmp += ';';
     tmp += Packet::checksum(tmp);
     return tmp;

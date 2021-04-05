@@ -89,8 +89,8 @@ static void batteryTask(void*) {
         float voltage = battery.getVoltage();
         int percentage = 50;
         printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
-        vTaskDelay(pdMS_TO_TICKS(1000));
         xQueueSendToBack(batteryQueue, &percentage, 0);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
     vTaskDelete(NULL);
 }
