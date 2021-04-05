@@ -79,7 +79,7 @@
 
 static int udpPort = 8090;
 static int tcpPort = 8091;
-QueueHandle_t engineQueue, batteryQueue;
+QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 
 static void batteryTask(void*) {
     myADC battery;
@@ -88,9 +88,21 @@ static void batteryTask(void*) {
     {
         float voltage = battery.getVoltage();
         int percentage = 50;
-        printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
+        // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
         xQueueSendToBack(batteryQueue, &percentage, 0);
         vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelete(NULL);
+}
+
+
+static void distanceTask(void*) {
+
+    while (1)
+    {
+        int distance = 51;
+        xQueueSendToBack(batteryQueue, &distance, 0);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
     vTaskDelete(NULL);
 }
@@ -107,6 +119,7 @@ extern "C" void app_main()
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 5, NULL);
     xTaskCreate(batteryTask, "batteryTask", 4096, NULL, 5, NULL);
+    xTaskCreate(distanceTask, "distanceTask", 4096, NULL, 5, NULL);
 
 
     

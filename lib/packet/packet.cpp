@@ -23,6 +23,9 @@ Packet* Packet::decode(std::string &data) {
 
         case 'B':
             return new BatteryPacket(data);
+
+        case 'D':
+            return new DistancePacket(data);
         
         default:
             return nullptr;
@@ -109,6 +112,34 @@ std::string BatteryPacket::prepare() {
     std::string tmp;
     tmp += this->getType();
     tmp += std::to_string(this->level);
+    tmp += ';';
+    tmp += Packet::checksum(tmp);
+    return tmp;
+}
+
+
+
+
+
+DistancePacket::DistancePacket(const uint8_t &distance) : distance(distance) {}
+DistancePacket::~DistancePacket() {}
+
+DistancePacket::DistancePacket(const std::string &data) {
+    if(!data.empty()) {
+        int separator = data.find(';');
+        std::string parse = data.substr(1, separator - 1);
+        this->distance = std::atoi(parse.c_str());
+    }
+}
+
+char DistancePacket::getType() {
+    return 'D';
+}
+
+std::string DistancePacket::prepare() {
+    std::string tmp;
+    tmp += this->getType();
+    tmp += std::to_string(this->distance);
     tmp += ';';
     tmp += Packet::checksum(tmp);
     return tmp;

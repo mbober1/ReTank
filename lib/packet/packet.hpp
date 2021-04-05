@@ -44,3 +44,14 @@ public:
     int level;
     virtual char getType();
 };
+
+
+class DistancePacket : public Packet {
+public:
+    DistancePacket(const std::string &data);
+    DistancePacket(const uint8_t &distance);
+    ~DistancePacket();
+    virtual std::string prepare();
+    int distance;
+    virtual char getType();
+};
