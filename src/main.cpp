@@ -44,10 +44,10 @@ static void distanceTask(void*) {
 
     while (1)
     {  
-        float distance = sensor.measure();
-        printf("Distance: %f\n", distance);
-        // xQueueSendToBack(distanceQueue, &distance, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        int distance = sensor.measure();
+        printf("Distance: %d\n", distance);
+        xQueueSendToBack(distanceQueue, &distance, 0);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
     vTaskDelete(NULL);
 }
