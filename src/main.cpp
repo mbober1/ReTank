@@ -14,72 +14,14 @@
 // #include <MPU.hpp>
 #include "esp_log.h"
 #include "esp_err.h"
-
 // #include "mpu/math.hpp"
 // #include "mpu/types.hpp"
-
-
 #include <adc.hpp>
-
-
-// #include <camera.hpp>
-
-// int previousTime;
-// int previousTime2;
-// int16_t input[4];
-
-// void upload_image(uint8_t *buffer, uint32_t length){
-// 	esp_err_t err;
-// 	uint32_t lengthWithMac = length+6;
-// 	uint8_t *macAndCheese = malloc(lengthWithMac);
-// 	memset((void*)macAndCheese, 0, lengthWithMac);
-// 	err = esp_efuse_mac_get_default(macAndCheese);
-// 	memcpy((void*)macAndCheese+6, (void*)buffer, length);
-// 	esp_http_client_config_t config = {
-// 		.url = "https://robotany.queueunderflow.com/api/dataUpload/v1/uploadImage",
-// 		.event_handler = _http_event_handler,
-// 		.method = HTTP_METHOD_POST,
-//     };
-//     esp_http_client_handle_t client = esp_http_client_init(&config);
-// 	esp_http_client_set_post_field(client, (const char*)macAndCheese, lengthWithMac);
-// 	esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
-// 	err = esp_http_client_perform(client);
-// 	if (err == ESP_OK) {
-// 		ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
-// 				esp_http_client_get_status_code(client),
-// 				esp_http_client_get_content_length(client));
-// 	} else {
-// 		ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
-// 	}
-// 	esp_http_client_cleanup(client);
-// 	free(macAndCheese);
-// }
-
-
-// void capture_image(uint8_t **buffer, camera Cam){
-// 	Cam.start_capture();
-// 	// TODO: Read the done flag.
-// 	while(!Cam.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
-// 	uint32_t fifo_length = Cam.read_fifo_length();
-// 	printf("FIFO Length: %d\n", fifo_length);
-// 	if(fifo_length == 0){
-// 		printf("FIFO length not set.\n");
-// 	}
-	
-// 	uint32_t bufferLength = 0;
-// 	Cam.image_read(fifo_length, buffer, &bufferLength);
-//     printf("FIFO len %d, buffer len %d\n", fifo_length, bufferLength);
-	
-// 	// upload_image(*buffer, bufferLength);
-
-// 	return;
-// }
-
-// spi_device_handle_t spiiii;
 
 static int udpPort = 8090;
 static int tcpPort = 8091;
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
+
 
 static void batteryTask(void*) {
     myADC battery;
@@ -127,7 +69,7 @@ extern "C" void app_main()
     while (1) {
         EnginePacket dupa(0,0);
         xQueueReceive(engineQueue, &dupa, portMAX_DELAY);
-        printf("L: %d, R: %d\n", dupa.left, dupa.right);
+        // printf("L: %d, R: %d\n", dupa.left, dupa.right);
 
         // Robot.setPoint(left/7, right/7);
         // Robot.autos();
@@ -135,22 +77,6 @@ extern "C" void app_main()
 
 
 
-
-
-
-    // camera Cam;
-    // vTaskDelay(2000 / portTICK_PERIOD_MS);
-	// int i = 0;
-
-    // while (1) {
-	// 	printf("[%d] Captured!\n", i);
-	// 	i++;
-	// 	uint8_t *rxBuf;
-	// 	capture_image(&rxBuf, Cam);
-	// 	free(rxBuf);
-    //     printf("Sleeping...\n");
-	// 	vTaskDelay((10*1000) / portTICK_PERIOD_MS);
-	// }
     // I2C_t myI2C(I2C_NUM_0);
     // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
     // myI2C.scanner();
@@ -218,13 +144,5 @@ extern "C" void app_main()
     //     //     // printf("L1: %d, L2: %d, R1: %d, R2: %d\n", input[0], input[1], input[2], input[3]);
     //     // }
 
-    //     // if(currentTime - previousTime2 > 1000000) {
-    //     //     previousTime2 = currentTime;
-    //     //     left ++;
-    //     //     right ++;
-    //     //     if(left > 25) left = 0;
-    //     //     if(right > 25) right = 0;
-    //     //     Robot.setPoint(left, right);
-    //     // }
     // }
 }

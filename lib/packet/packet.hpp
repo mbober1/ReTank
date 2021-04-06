@@ -14,6 +14,7 @@ public:
 };
 
 
+
 class PingPacket : public Packet {
 public:
     PingPacket();
@@ -21,6 +22,7 @@ public:
     virtual std::string prepare();
     virtual char getType();
 };
+
 
 
 class EnginePacket : public Packet {
@@ -35,6 +37,7 @@ public:
 };
 
 
+
 class BatteryPacket : public Packet {
 public:
     BatteryPacket(const std::string &data);
@@ -46,6 +49,7 @@ public:
 };
 
 
+
 class DistancePacket : public Packet {
 public:
     DistancePacket(const std::string &data);
@@ -53,5 +57,64 @@ public:
     ~DistancePacket();
     virtual std::string prepare();
     int distance;
+    virtual char getType();
+};
+
+
+
+// class NamePacket : public Packet {
+// public:
+//     NamePacket(const std::string &data);
+//     NamePacket(const char* name);
+//     ~NamePacket();
+//     virtual std::string prepare();
+//     std::string name;
+//     virtual char getType();
+// };
+
+
+
+class SpeedPacket : public Packet {
+public:
+    SpeedPacket(const std::string &data);
+    SpeedPacket(const int8_t &left, const int8_t &right);
+    ~SpeedPacket();
+    virtual std::string prepare();
+    int8_t left;
+    int8_t right;
+    virtual char getType();
+};
+
+
+
+class ClosePacket : public Packet {
+public:
+    ClosePacket();
+    ~ClosePacket();
+    virtual std::string prepare();
+    virtual char getType();
+};
+
+
+
+class AcceloPacket : public Packet {
+public:
+    AcceloPacket(std::string data);
+    AcceloPacket(const int8_t &x, const int8_t &y, const int8_t &z);
+    ~AcceloPacket();
+    virtual std::string prepare();
+    int8_t x, y, z;
+    virtual char getType();
+};
+
+
+
+class GyroPacket : public Packet {
+public:
+    GyroPacket(std::string data);
+    GyroPacket(const int8_t &x, const int8_t &y, const int8_t &z);
+    ~GyroPacket();
+    virtual std::string prepare();
+    int8_t x, y, z;
     virtual char getType();
 };
