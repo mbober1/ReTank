@@ -11,7 +11,7 @@ static void udpServerTask(void *port) {
     static const char *TAG = "UDP";
 
     char rx_buffer[128];
-    char clientAddress[128];
+    // char clientAddress[128];
     struct sockaddr_in6 dest_addr;
 
     while (1) {
@@ -37,7 +37,7 @@ static void udpServerTask(void *port) {
 
 
         while (1) {
-            struct sockaddr_storage source_addr;
+            // struct sockaddr_storage source_addr;
             // socklen_t socklen = sizeof(source_addr);
 
 
@@ -69,7 +69,7 @@ static void udpServerTask(void *port) {
                 }
             }
         }
-        
+
         if(listen_sock != -1) {
             ESP_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(listen_sock, 0);

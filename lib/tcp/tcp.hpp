@@ -123,9 +123,6 @@ void clientConnected(const int sock)
                     break;
                 }
 
-                case 'E':
-                    printf("ENGINE L: %d | P: %d\n", ((EnginePacket*)packet)->left, ((EnginePacket*)packet)->right);
-                    break;
                 
                 default:
                     printf("du[pa!\n");
