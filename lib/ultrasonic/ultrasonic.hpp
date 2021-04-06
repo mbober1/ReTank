@@ -39,7 +39,7 @@ private:
 public:
     Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin);
     ~Ultrasonic();
-    // float measure();
+    float measure();
     uint32_t measureTime();
 };
 

@@ -25,27 +25,27 @@ QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue;
 
 
-// static void batteryTask(void*) {
-//     myADC battery;
+static void batteryTask(void*) {
+    myADC battery;
 
-//     while (1)
-//     {
-//         int percentage = battery.getVoltage() * 25;
-//         // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
-//         xQueueSendToBack(batteryQueue, &percentage, 0);
-//         vTaskDelay(pdMS_TO_TICKS(1000));
-//     }
-//     vTaskDelete(NULL);
-// }
+    while (1)
+    {
+        int percentage = battery.getVoltage() * 25;
+        // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
+        xQueueSendToBack(batteryQueue, &percentage, 0);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelete(NULL);
+}
 
 
 static void distanceTask(void*) {
-    Ultrasonic distance(GPIO_NUM_26, GPIO_NUM_17);
+    Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
 
     while (1)
     {  
-        printf("test\n");
-        distance.measureTime();
+        float distance = sensor.measure();
+        printf("Distance: %f\n", distance);
         // xQueueSendToBack(distanceQueue, &distance, 0);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
