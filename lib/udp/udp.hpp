@@ -50,7 +50,7 @@ static void udpServerTask(void *port) {
                 // inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, clientAddress, sizeof(clientAddress) - 1);
 
                 std::string x(rx_buffer, len);
-                printf("%s Received %d bytes |   %s\n", TAG, len, x.c_str());
+                // printf("%s Received %d bytes |   %s\n", TAG, len, x.c_str());
 
                 Packet* packet = Packet::decode(x);
 
@@ -62,7 +62,7 @@ static void udpServerTask(void *port) {
                         break;
                     
                     default:
-                        printf("du[pa!\n");
+                        printf("Undefined UDP packet (%d bytes) --> %s \n", len, x.c_str());
                         break;
                     }
                     delete packet;

@@ -12,7 +12,9 @@
 extern QueueHandle_t batteryQueue;
 extern QueueHandle_t distanceQueue;
 
-static void clientConnected(const int sock);
+void clientRX(const int &sock);
+void clientTX(void* sock);
+
 static void tcpServerTask(void* port);
 
 
@@ -77,10 +79,16 @@ void tcpServerTask(void* port) {
                 inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, clientAddress, sizeof(clientAddress) - 1);
             }
 
-            ESP_LOGI(TAG, "Socket accepted ip address: %s", clientAddress);
+            printf("%s | Socket %d accepted ip address: %s", TAG, sock, clientAddress);
 
-            clientConnected(sock);
+            TaskHandle_t tx = NULL;
 
+            xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
+            
+            clientRX(sock); //wait until client connected
+
+            printf("killa tx\n");
+            vTaskDelete(&tx);
             shutdown(sock, 0);
             close(sock);
         } 
@@ -90,19 +98,14 @@ void tcpServerTask(void* port) {
     vTaskDelete(NULL);
 }
 
-
-
-
-void clientConnected(const int sock)
-{
-    static const char *TAG = "TCP";
+void clientRX(const int &sock) {
+    printf("TCP RX init | Socket: %d\n", (int)sock);
+    static const char *TAG = "TCP RX";
     int len;
     char rx_buffer[128];
 
-    int battery, distance;
-
     do {
-        len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+        len = recv((int)sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
 
         if (len < 0) ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
         else if (!len) ESP_LOGW(TAG, "Connection closed");
@@ -117,33 +120,42 @@ void clientConnected(const int sock)
                 switch (packet->getType())
                 {
                 case 'P': {
-                    printf("PING!\n");
+                    // printf("PING!\n");
                     std::string data = PingPacket().prepare();
-                    send(sock, data.c_str(), data.size(), 0);
+                    send((int)sock, data.c_str(), data.size(), 0);
                     break;
                 }
 
                 
                 default:
-                    printf("du[pa!\n");
+                    printf("Undefined UDP packet (%d bytes) --> %s \n", len, x.c_str());
                     break;
                 }
                 delete packet;
             }
         }
-
-        //sending
-        if(xQueueReceive(batteryQueue, &battery, 0) == pdTRUE) {
-            std::string data = BatteryPacket(battery).prepare();
-            send(sock, data.c_str(), data.size(), 0);
-        }
-
-        if(xQueueReceive(distanceQueue, &distance, 0) == pdTRUE) {
-            std::string data = DistancePacket(distance).prepare();
-            send(sock, data.c_str(), data.size(), 0);
-        }
-
-
-
     } while (len > 0);
+    printf("TCP RX delete\n");
+}
+
+
+void clientTX(void* sock) {
+        int battery, distance;
+        printf("TCP TX init | Socket: %d\n", (int)sock);
+        //sending
+
+        while(true) {
+            if(xQueueReceive(batteryQueue, &battery, 0) == pdTRUE) {
+                std::string data = BatteryPacket(battery).prepare();
+                send((int)sock, data.c_str(), data.size(), 0);
+            }
+
+            if(xQueueReceive(distanceQueue, &distance, 0) == pdTRUE) {
+                std::string data = DistancePacket(distance).prepare();
+                send((int)sock, data.c_str(), data.size(), 0);
+            }
+        }
+        printf("tego nie powinienes widziec TX\n");
+
+    vTaskDelete(NULL);
 }
