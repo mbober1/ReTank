@@ -20,7 +20,7 @@
 // #include "mpu/math.hpp"
 // #include "mpu/types.hpp"
 // #include <adc.hpp>
-// #include <ultrasonic.hpp>
+#include <ultrasonic.hpp>
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -44,18 +44,18 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 // }
 
 
-// static void distanceTask(void*) {
-//     Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
+static void distanceTask(void*) {
+    Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
 
-//     while (1)
-//     {  
-//         int distance = sensor.measure();
-//         // printf("Distance: %d\n", distance);
-//         if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
-//         vTaskDelay(pdMS_TO_TICKS(30));
-//     }
-//     vTaskDelete(NULL);
-// }
+    while (1)
+    {  
+        int distance = sensor.measure();
+        // printf("Distance: %d\n", distance);
+        if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
+        vTaskDelay(pdMS_TO_TICKS(30));
+    }
+    vTaskDelete(NULL);
+}
 
 static void robotDriver(void*) {
     // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_2, PCNT_UNIT_3);
@@ -128,12 +128,12 @@ static void robotDriver(void*) {
 
 extern "C" void app_main()
 {
-    // esp_pm_config_esp32_t power = {};
-    // power.min_freq_mhz = 240;
-    // power.max_freq_mhz = 240;
-    // power.light_sleep_enable = false;
+    esp_pm_config_esp32_t power = {};
+    power.min_freq_mhz = 240;
+    power.max_freq_mhz = 240;
+    power.light_sleep_enable = false;
 
-    // esp_pm_configure(&power);
+    esp_pm_configure(&power);
 
     // gpio_install_isr_service(0);
     initialise_wifi();
@@ -154,7 +154,7 @@ extern "C" void app_main()
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
     xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
 
 
