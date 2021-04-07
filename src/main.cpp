@@ -53,16 +53,13 @@ static void distanceTask(void*) {
 
 static void robotDriver(void*) {
     robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1);
-    // motor e1(IN1, IN2, ENC1A, ENC1B, PWM1, PWMCHANNEL, PCNT_UNIT_0);
     EnginePacket packet(0,0);
     int64_t currentTime = 0;
 
     while (1) {
         xQueueReceive(engineQueue, &packet, 0);
         Robot.setPoint(packet.left/7, packet.left/7);
-        // e1.setpoint = packet.left/7;
         Robot.autos();
-        // e1.drive();
 
         printf("L: %d | System lag: %lld\n", packet.left, esp_timer_get_time() - currentTime);
         currentTime = esp_timer_get_time();

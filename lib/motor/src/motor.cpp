@@ -77,7 +77,7 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
 }
 
 
-inline void motor::direction(Direction dir) {
+inline void motor::direction(const Direction &dir) {
     if(static_cast<uint8_t>(dir)) {
         gpio_set_level(this->in1, 1);
         gpio_set_level(this->in2, 0);
@@ -99,23 +99,23 @@ inline void motor::softStop() {
 
 
 
-inline void motor::power(uint16_t pow) {
+inline void motor::power(const uint16_t &pow) {
     ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, pow);
     ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
 }
 
 
 
-inline double motor::compute() {
+inline void motor::compute(uint16_t &pow) {
     int64_t currentTime = esp_timer_get_time();
     int64_t elapsedTime = currentTime - this->previousTime;
     int16_t input;
     pcnt_get_counter_value(encoder, &input);
     xQueueSendToBack(speedQueue, &input, 0);
 
-    double kp = 1;
-    double ki = 0.01;
-    double kd = 0.1;
+    this->kp = 1;
+    this->ki = 0.01;
+    this->kd = 0.1;
 
     int error = this->setpoint - input;
     this->integralError += error * elapsedTime; //calka
@@ -125,12 +125,13 @@ inline double motor::compute() {
     this->lastError = error;
     this->previousTime = currentTime;
     pcnt_counter_clear(encoder);
-    return kp*error + ki*this->integralError + kd*this->derivativeError;    
+    pow = kp*error + ki*this->integralError + kd*this->derivativeError;    
 }
 
 void motor::drive() {
-    this->power(this->compute());
-    
+    uint16_t val;
+    this->compute(val);
+    this->power(val);
     if(this->setpoint > 0) this->direction(Direction::FORWARD);
     else if(this->setpoint < 0) this->direction(Direction::BACKWARD);
 }
