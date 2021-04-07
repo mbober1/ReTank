@@ -24,7 +24,6 @@ static int tcpPort = 8091;
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue;
 
-
 static void batteryTask(void*) {
     myADC battery;
 
@@ -98,6 +97,7 @@ static void distanceTask(void*) {
 
 extern "C" void app_main()
 {
+    gpio_install_isr_service(0);
     initialise_wifi();
     // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
 
@@ -115,7 +115,7 @@ extern "C" void app_main()
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 5, NULL);
     // xTaskCreate(batteryTask, "batteryTask", 4096, NULL, 5, NULL);
-    xTaskCreate(distanceTask, "distanceTask", 4096, NULL, 5, NULL);
+    xTaskCreate(distanceTask, "distanceTask", 4096, NULL, 10, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
 
 
@@ -125,7 +125,6 @@ extern "C" void app_main()
         // EnginePacket dupa(0,0);
         // xQueueReceive(engineQueue, &dupa, portMAX_DELAY);
         // printf("L: %d, R: %d\n", dupa.left, dupa.right);
-        // distance.measure();
         // printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
         vTaskDelay(pdMS_TO_TICKS(1000));
         // Robot.setPoint(left/7, right/7);

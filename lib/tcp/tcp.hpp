@@ -87,7 +87,7 @@ void tcpServerTask(void* port) {
             
             clientRX(sock); //wait until client connected
 
-            printf("killa tx\n");
+            printf("TCP TX kill task \n");
             vTaskDelete(&tx);
             shutdown(sock, 0);
             close(sock);
@@ -112,7 +112,7 @@ void clientRX(const int &sock) {
         else {
 
             std::string x(rx_buffer, len);
-            printf("%s Received %d bytes: %s\n", TAG, len, x.c_str());
+            // printf("%s Received %d bytes: %s\n", TAG, len, x.c_str());
 
             Packet* packet = Packet::decode(x);
 
@@ -126,7 +126,6 @@ void clientRX(const int &sock) {
                     break;
                 }
 
-                
                 default:
                     printf("Undefined UDP packet (%d bytes) --> %s \n", len, x.c_str());
                     break;
@@ -139,10 +138,9 @@ void clientRX(const int &sock) {
 }
 
 
-void clientTX(void* sock) {
+void clientTX(void* sock) { //sending
         int battery, distance;
         printf("TCP TX init | Socket: %d\n", (int)sock);
-        //sending
 
         while(true) {
             if(xQueueReceive(batteryQueue, &battery, 0) == pdTRUE) {
@@ -155,7 +153,6 @@ void clientTX(void* sock) {
                 send((int)sock, data.c_str(), data.size(), 0);
             }
         }
-        printf("tego nie powinienes widziec TX\n");
 
     vTaskDelete(NULL);
 }
