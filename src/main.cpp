@@ -22,6 +22,9 @@
 // #include <adc.hpp>
 // #include <ultrasonic.hpp>
 
+#include "soc/timer_group_struct.h"
+#include "soc/timer_group_reg.h"
+
 static int udpPort = 8090;
 static int tcpPort = 8091;
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
@@ -65,6 +68,10 @@ static void robotDriver(void*) {
         xQueueReceive(engineQueue, &packet, 0);
         engin.setpoint = packet.left/2;
         engin.drive(input[0]);
+
+        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+        TIMERG0.wdt_feed=1;
+        TIMERG0.wdt_wprotect=0;
         // Robot.setPoint(packet.left/7, packet.left/7);
         // Robot.autos(input[0]);
 

@@ -93,7 +93,6 @@ inline void motor::softStop() {
 inline void motor::power(const uint32_t &pow) {
     if(pow > MAX_POWER) ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, MAX_POWER);
     else ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, pow);
-
     ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
 }
 
@@ -103,13 +102,7 @@ void motor::compute(const int16_t &inputd, uint32_t &pow, int8_t &direction) {
     int64_t elapsedTime = currentTime - this->previousTime;
     int16_t input;
     pcnt_get_counter_value(this->encoder, &input);
-    // int16_t input[3] = {};
-    // pcnt_get_counter_value(this->encoder, &input[0]);
-    // pcnt_get_counter_value(this->encoder2, &input[1]);
     pcnt_counter_clear(this->encoder);
-    // pcnt_counter_clear(this->encoder2);
-
-    // input[2] = input[0] + input[1];
     // xQueueSendToBack(speedQueue, &input[2], 0);
 
     int error = (unsigned int)this->setpoint - input;
