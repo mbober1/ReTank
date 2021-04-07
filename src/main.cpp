@@ -9,11 +9,11 @@
 #include <udp.hpp>
 #include <tcp.hpp>
 #include <wifi.hpp>
-// #include <robot.hpp>
-#include <I2Cbus.hpp>
+#include <robot.hpp>
+// #include <I2Cbus.hpp>
 // #include <MPU.hpp>
-#include "esp_log.h"
-#include "esp_err.h"
+// #include "esp_log.h"
+// #include "esp_err.h"
 // #include "mpu/math.hpp"
 // #include "mpu/types.hpp"
 #include <adc.hpp>
@@ -22,7 +22,7 @@
 static int udpPort = 8090;
 static int tcpPort = 8091;
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
-QueueHandle_t accelQueue, gyroQueue;
+QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
 static void batteryTask(void*) {
     myADC battery;
@@ -44,13 +44,31 @@ static void distanceTask(void*) {
     while (1)
     {  
         int distance = sensor.measure();
-        printf("Distance: %d\n", distance);
-        xQueueSendToBack(distanceQueue, &distance, 0);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        // printf("Distance: %d\n", distance);
+        if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
     vTaskDelete(NULL);
 }
 
+static void robotDriver(void*) {
+    robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1);
+    // motor e1(IN1, IN2, ENC1A, ENC1B, PWM1, PWMCHANNEL, PCNT_UNIT_0);
+    EnginePacket packet(0,0);
+    int64_t currentTime = 0;
+
+    while (1) {
+        xQueueReceive(engineQueue, &packet, 0);
+        Robot.setPoint(packet.left/7, packet.left/7);
+        // e1.setpoint = packet.left/7;
+        Robot.autos();
+        // e1.drive();
+
+        printf("L: %d | System lag: %lld\n", packet.left, esp_timer_get_time() - currentTime);
+        currentTime = esp_timer_get_time();
+    }
+    vTaskDelete(NULL);
+}
 
 // static void mpuTask(void*) {
 //     MPU_t MPU;
@@ -94,12 +112,20 @@ static void distanceTask(void*) {
 //     }
 //     vTaskDelete(NULL);
 // }
+#include "esp32/clk.h"
+#include "esp_pm.h"
 
 extern "C" void app_main()
 {
+    esp_pm_config_esp32_t power = {};
+    power.min_freq_mhz = 240;
+    power.max_freq_mhz = 240;
+    power.light_sleep_enable = false;
+
+    esp_pm_configure(&power);
+
     gpio_install_isr_service(0);
     initialise_wifi();
-    // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1, PCNT_UNIT_2, PCNT_UNIT_3);
 
     // I2C_t myI2C(I2C_NUM_0);
     // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
@@ -110,25 +136,20 @@ extern "C" void app_main()
     gyroQueue = xQueueCreate(5, sizeof(GyroPacket));
     batteryQueue = xQueueCreate(5, sizeof(int));
     distanceQueue = xQueueCreate(5, sizeof(int));
+    speedQueue = xQueueCreate(5, sizeof(int));
 
 
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 5, NULL);
-    // xTaskCreate(batteryTask, "batteryTask", 4096, NULL, 5, NULL);
-    xTaskCreate(distanceTask, "distanceTask", 4096, NULL, 10, NULL);
+    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
+    xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
+    // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
 
 
-    
 
     while (1) {
-        // EnginePacket dupa(0,0);
-        // xQueueReceive(engineQueue, &dupa, portMAX_DELAY);
-        // printf("L: %d, R: %d\n", dupa.left, dupa.right);
-        // printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        // Robot.setPoint(left/7, right/7);
-        // Robot.autos();
+        vTaskSuspend(NULL);
     }
 
 
@@ -165,8 +186,6 @@ extern "C" void app_main()
     //     mpud::float_axes_t gyroDPS = mpud::gyroDecPerSec(gyroRaw, mpud::GYRO_FS_500DPS);  // raw data to º/s
     //     printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
     //     printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
-    //     // Robot.setPoint(left/7, right/7);
-    //     // Robot.autos();        
 
     //     vTaskDelay(pdMS_TO_TICKS(10));
     //     // int64_t currentTime = esp_timer_get_time();

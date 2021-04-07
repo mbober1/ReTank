@@ -37,18 +37,12 @@ static void udpServerTask(void *port) {
 
 
         while (1) {
-            // struct sockaddr_storage source_addr;
-            // socklen_t socklen = sizeof(source_addr);
-
-
             len = recv(listen_sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
 
             if (len < 0) {
                 ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
                 break;
             } else {
-                // inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, clientAddress, sizeof(clientAddress) - 1);
-
                 std::string x(rx_buffer, len);
                 // printf("%s Received %d bytes |   %s\n", TAG, len, x.c_str());
 

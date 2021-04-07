@@ -1,7 +1,7 @@
 #include "motor.hpp"
 
 
-motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, uint8_t encoderB, uint8_t pwmChannel, pcnt_unit_t pcntUnit, pcnt_unit_t pcntUnit2) : in1(in1), in2(in2), pwmPin(pwmPin), pwmChannel(pwmChannel), encoderA(encoderA), encoderB(encoderB) {
+motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, uint8_t encoderB, uint8_t pwmChannel, pcnt_unit_t pcntUnit) : in1(in1), in2(in2), pwmPin(pwmPin), pwmChannel(pwmChannel), encoderA(encoderA), encoderB(encoderB) {
     gpio_pad_select_gpio(this->in1);
     gpio_pad_select_gpio(this->in2);
     gpio_set_direction(this->in1, GPIO_MODE_OUTPUT);
@@ -77,7 +77,7 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
 }
 
 
-void motor::direction(Direction dir) {
+inline void motor::direction(Direction dir) {
     if(static_cast<uint8_t>(dir)) {
         gpio_set_level(this->in1, 1);
         gpio_set_level(this->in2, 0);
@@ -87,38 +87,37 @@ void motor::direction(Direction dir) {
     }
 }
 
-void motor::fastStop() {
+inline void motor::fastStop() {
     gpio_set_level(this->in1, 1);
     gpio_set_level(this->in2, 1);
 }
 
-void motor::softStop() {
+inline void motor::softStop() {
     gpio_set_level(this->in1, 0);
     gpio_set_level(this->in2, 0);
 }
 
 
 
-void motor::power(uint16_t pow) {
+inline void motor::power(uint16_t pow) {
     ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, pow);
     ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
 }
 
 
 
-double motor::compute() {
+inline double motor::compute() {
     int64_t currentTime = esp_timer_get_time();
     int64_t elapsedTime = currentTime - this->previousTime;
-    int16_t input[2];
-    int16_t inputS;
-    pcnt_get_counter_value(encoder, &input[0]);
-    // pcnt_get_counter_value(encoder2, input + 1);
-    inputS = input[0] + input[1];
+    int16_t input;
+    pcnt_get_counter_value(encoder, &input);
+    xQueueSendToBack(speedQueue, &input, 0);
+
     double kp = 1;
     double ki = 0.01;
     double kd = 0.1;
 
-    int error = this->setpoint - input[0];
+    int error = this->setpoint - input;
     this->integralError += error * elapsedTime; //calka
     if(this->integralError > 200) this->integralError = 400;
     if(this->integralError < -200) this->integralError = -400;
@@ -126,6 +125,13 @@ double motor::compute() {
     this->lastError = error;
     this->previousTime = currentTime;
     pcnt_counter_clear(encoder);
-    // pcnt_counter_clear(encoder2);
     return kp*error + ki*this->integralError + kd*this->derivativeError;    
 }
+
+void motor::drive() {
+    this->power(this->compute());
+    
+    if(this->setpoint > 0) this->direction(Direction::FORWARD);
+    else if(this->setpoint < 0) this->direction(Direction::BACKWARD);
+}
+
