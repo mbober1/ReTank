@@ -5,10 +5,13 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_pm.h"
 
-#include <udp.hpp>
-#include <tcp.hpp>
-#include <wifi.hpp>
+#include "secrets.hpp"
+
+// #include <udp.hpp>
+// #include <tcp.hpp>
+// #include <wifi.hpp>
 #include <robot.hpp>
 // #include <I2Cbus.hpp>
 // #include <MPU.hpp>
@@ -16,53 +19,102 @@
 // #include "esp_err.h"
 // #include "mpu/math.hpp"
 // #include "mpu/types.hpp"
-#include <adc.hpp>
-#include <ultrasonic.hpp>
+// #include <adc.hpp>
+// #include <ultrasonic.hpp>
 
-static int udpPort = 8090;
-static int tcpPort = 8091;
-QueueHandle_t engineQueue, batteryQueue, distanceQueue;
-QueueHandle_t accelQueue, gyroQueue, speedQueue;
+// static int udpPort = 8090;
+// static int tcpPort = 8091;
+// QueueHandle_t engineQueue, batteryQueue, distanceQueue;
+// QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
-static void batteryTask(void*) {
-    myADC battery;
+// static void batteryTask(void*) {
+//     myADC battery;
 
-    while (1)
-    {
-        int percentage = battery.getVoltage() * 25;
-        // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
-        xQueueSendToBack(batteryQueue, &percentage, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    vTaskDelete(NULL);
-}
+//     while (1)
+//     {
+//         int percentage = battery.getVoltage() * 25;
+//         // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
+//         xQueueSendToBack(batteryQueue, &percentage, 0);
+//         vTaskDelay(pdMS_TO_TICKS(1000));
+//     }
+//     vTaskDelete(NULL);
+// }
 
 
-static void distanceTask(void*) {
-    Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
+// static void distanceTask(void*) {
+//     Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
 
-    while (1)
-    {  
-        int distance = sensor.measure();
-        // printf("Distance: %d\n", distance);
-        if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
-        vTaskDelay(pdMS_TO_TICKS(30));
-    }
-    vTaskDelete(NULL);
-}
+//     while (1)
+//     {  
+//         int distance = sensor.measure();
+//         // printf("Distance: %d\n", distance);
+//         if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
+//         vTaskDelay(pdMS_TO_TICKS(30));
+//     }
+//     vTaskDelete(NULL);
+// }
 
 static void robotDriver(void*) {
-    robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC1A, ENC1B, ENC2A, ENC2B, PCNT_UNIT_0, PCNT_UNIT_1);
-    EnginePacket packet(0,0);
-    int64_t currentTime = 0;
+    // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_2, PCNT_UNIT_3);
+    // EnginePacket packet(0,0);
+    // int64_t currentTime = 0;
+    int16_t input[4];
+
+        pcnt_config_t pcnt_config = {};
+        pcnt_config.pulse_gpio_num = 14;
+        pcnt_config.ctrl_gpio_num = 33;
+        pcnt_config.channel = PCNT_CHANNEL_0;
+        pcnt_config.unit = PCNT_UNIT_0;
+        pcnt_config.pos_mode = PCNT_COUNT_DEC;
+        pcnt_config.neg_mode = PCNT_COUNT_INC;
+        pcnt_config.lctrl_mode = PCNT_MODE_REVERSE;
+        pcnt_config.hctrl_mode = PCNT_MODE_KEEP;
+        pcnt_config.counter_h_lim = 1000;
+        pcnt_config.counter_l_lim = -1000;
+        esp_err_t err = pcnt_unit_config(&pcnt_config);
+
+        err += pcnt_counter_pause(PCNT_UNIT_0);
+         err += pcnt_counter_clear(PCNT_UNIT_0);
+         err += pcnt_filter_disable(PCNT_UNIT_0);
+        err += pcnt_intr_disable(PCNT_UNIT_0);
+        err +=  pcnt_counter_resume(PCNT_UNIT_0);
+        printf("err %d", err);
+
+        pcnt_config_t pcnt_config2 = {};
+        pcnt_config2.pulse_gpio_num = 33;
+        pcnt_config2.ctrl_gpio_num = 14;
+        pcnt_config2.channel = PCNT_CHANNEL_1;
+        pcnt_config2.unit = PCNT_UNIT_0;
+        pcnt_config2.pos_mode = PCNT_COUNT_INC;
+        pcnt_config2.neg_mode = PCNT_COUNT_DEC;
+        pcnt_config2.lctrl_mode = PCNT_MODE_REVERSE;
+        pcnt_config2.hctrl_mode = PCNT_MODE_KEEP;
+        pcnt_config2.counter_h_lim = 1000;
+        pcnt_config2.counter_l_lim = -1000;
+        esp_err_t err2 = pcnt_unit_config(&pcnt_config2);
+
+        err2 += pcnt_counter_pause(PCNT_UNIT_1);
+        err2 += pcnt_counter_clear(PCNT_UNIT_1);
+        err2 += pcnt_filter_disable(PCNT_UNIT_1);
+        err2 += pcnt_intr_disable(PCNT_UNIT_1);
+        err2 +=  pcnt_counter_resume(PCNT_UNIT_1);
+        printf("    err2 %d\n ", err2);
 
     while (1) {
-        xQueueReceive(engineQueue, &packet, 0);
-        Robot.setPoint(packet.left/7, packet.left/7);
-        Robot.autos();
+        pcnt_get_counter_value(PCNT_UNIT_0, &input[0]);
+        pcnt_get_counter_value(PCNT_UNIT_1, &input[1]);
+        // pcnt_get_counter_value(PCNT_UNIT_2, &input[2]);
+        // pcnt_get_counter_value(PCNT_UNIT_3, &input[3]);
 
-        printf("L: %d | System lag: %lld\n", packet.left, esp_timer_get_time() - currentTime);
-        currentTime = esp_timer_get_time();
+        // xQueueReceive(engineQueue, &packet, 0);
+        // Robot.setPoint(packet.left/7, packet.left/7);
+        // Robot.autos(input[0]);
+
+        // printf("L: %d | System lag: %lld\n", packet.left, esp_timer_get_time() - currentTime);
+        // currentTime = esp_timer_get_time();
+        // printf("ENC1: %d, ENC2: %d\n", input[0], input[1]);
+        printf(     "L1: %d, L2: %d, R1: %d, R2: %d\n        ", input[0], input[1], 0, 0);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }
@@ -109,36 +161,34 @@ static void robotDriver(void*) {
 //     }
 //     vTaskDelete(NULL);
 // }
-#include "esp32/clk.h"
-#include "esp_pm.h"
 
 extern "C" void app_main()
 {
-    esp_pm_config_esp32_t power = {};
-    power.min_freq_mhz = 240;
-    power.max_freq_mhz = 240;
-    power.light_sleep_enable = false;
+    // esp_pm_config_esp32_t power = {};
+    // power.min_freq_mhz = 240;
+    // power.max_freq_mhz = 240;
+    // power.light_sleep_enable = false;
 
-    esp_pm_configure(&power);
+    // esp_pm_configure(&power);
 
-    gpio_install_isr_service(0);
-    initialise_wifi();
+    // gpio_install_isr_service(0);
+    // initialise_wifi();
 
     // I2C_t myI2C(I2C_NUM_0);
     // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
     // myI2C.scanner();
 
-    engineQueue = xQueueCreate(5, sizeof(EnginePacket));
-    accelQueue = xQueueCreate(5, sizeof(AcceloPacket));
-    gyroQueue = xQueueCreate(5, sizeof(GyroPacket));
-    batteryQueue = xQueueCreate(5, sizeof(int));
-    distanceQueue = xQueueCreate(5, sizeof(int));
-    speedQueue = xQueueCreate(5, sizeof(int));
+    // engineQueue = xQueueCreate(5, sizeof(EnginePacket));
+    // accelQueue = xQueueCreate(5, sizeof(AcceloPacket));
+    // gyroQueue = xQueueCreate(5, sizeof(GyroPacket));
+    // batteryQueue = xQueueCreate(5, sizeof(int));
+    // distanceQueue = xQueueCreate(5, sizeof(int));
+    // speedQueue = xQueueCreate(5, sizeof(int));
 
 
-    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
-    xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
+    // xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
+    // xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
+    xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
