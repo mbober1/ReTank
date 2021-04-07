@@ -60,14 +60,13 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 static void robotDriver(void*) {
     // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_2, PCNT_UNIT_3);
     EnginePacket packet(0,0);
-    // int64_t currentTime = 0;
-    int16_t input[4];
+    int64_t currentTime = 0;
     motor engin(GPIO_NUM_12, GPIO_NUM_32, 2, 14, 33, PWMCHANNEL, PCNT_UNIT_0);
 
     while (1) {
         xQueueReceive(engineQueue, &packet, 0);
         engin.setpoint = packet.left/2;
-        engin.drive(input[0]);
+        engin.drive();
 
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
         TIMERG0.wdt_feed=1;
@@ -75,8 +74,8 @@ static void robotDriver(void*) {
         // Robot.setPoint(packet.left/7, packet.left/7);
         // Robot.autos(input[0]);
 
-        // printf("L: %d | System lag: %lld\n", packet.left, esp_timer_get_time() - currentTime);
-        // currentTime = esp_timer_get_time();
+        printf("System lag: %lld\n", esp_timer_get_time() - currentTime);
+        currentTime = esp_timer_get_time();
         // printf("ENC1: %d, ENC2: %d\n", input[0], input[1]);
         // printf(     "Encoder: %d, PID: %d, Setpoint: %d\n", input[0], pow, engin.setpoint);
         // vTaskDelay(50 / portTICK_PERIOD_MS);

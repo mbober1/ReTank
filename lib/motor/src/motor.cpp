@@ -64,7 +64,6 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
 
     this->integralError = 0;
     this->lastError = 0;
-
 }
 
 
@@ -97,7 +96,7 @@ inline void motor::power(const uint32_t &pow) {
 }
 
 
-void motor::compute(const int16_t &inputd, uint32_t &pow, int8_t &direction) {
+void motor::compute(uint32_t &pow, int8_t &direction) {
     int64_t currentTime = esp_timer_get_time();
     int64_t elapsedTime = currentTime - this->previousTime;
     int16_t input;
@@ -117,7 +116,7 @@ void motor::compute(const int16_t &inputd, uint32_t &pow, int8_t &direction) {
 
 
     this->kp = 4000;
-    this->ki = 100;
+    this->ki = 250;
     this->kd = 0;
 
     int p = kp*error;
@@ -133,14 +132,13 @@ void motor::compute(const int16_t &inputd, uint32_t &pow, int8_t &direction) {
     else if(error < 0) direction = -1;
     else direction = 0;
 
-    printf("Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d --> ", error, input, p, i, d, pid);
-
+    // printf("Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d --> ", error, input, p, i, d, pid);
 }
 
-void motor::drive(const int16_t &input) {
+void motor::drive() {
     int8_t dir;
     uint32_t pow;
-    this->compute(input, pow, dir);
+    this->compute(pow, dir);
     this->power(pow);
 
     if(dir > 0) {
@@ -156,6 +154,7 @@ void motor::drive(const int16_t &input) {
         this->softStop();
         dir = 0;
     }
-    printf("Setpoint: %+4d, Power: %d%%, Direction: %d,  Input: %d\n", this->setpoint, (pow*100)/MAX_POWER, dir, input);
+
+    // printf("Setpoint: %+4d, Power: %d%%, Direction: %d\n", this->setpoint, (pow*100)/MAX_POWER, dir);
 }
 

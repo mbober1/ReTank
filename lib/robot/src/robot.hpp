@@ -40,6 +40,6 @@ inline void robot::setPoint(const int &s1,const  int &s2) {
 
 
 inline void robot::autos(const int16_t input) {
-    engine[0].drive(input);
+    engine[0].drive();
     // engine[1].drive();
 }
