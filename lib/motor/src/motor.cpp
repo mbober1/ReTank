@@ -24,50 +24,41 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, u
     ledc_channel_config(&ledc_channel);
 
 
-
     this->encoder = pcntUnit;
+
     pcnt_config_t pcnt_config = {};
     pcnt_config.pulse_gpio_num = this->encoderA;
     pcnt_config.ctrl_gpio_num = this->encoderB;
     pcnt_config.channel = PCNT_CHANNEL_0;
     pcnt_config.unit = this->encoder;
-    pcnt_config.pos_mode = PCNT_COUNT_INC;
+    pcnt_config.pos_mode = PCNT_COUNT_DEC;
     pcnt_config.neg_mode = PCNT_COUNT_INC;
-    pcnt_config.lctrl_mode = PCNT_MODE_KEEP;
+    pcnt_config.lctrl_mode = PCNT_MODE_REVERSE;
     pcnt_config.hctrl_mode = PCNT_MODE_KEEP;
-    pcnt_config.counter_h_lim = (1000);
-    pcnt_config.counter_l_lim = 0;
-    pcnt_unit_config(&pcnt_config);
-    pcnt_counter_pause(this->encoder);
-    pcnt_counter_clear(this->encoder);
-    pcnt_filter_disable(this->encoder);
-    pcnt_intr_disable(this->encoder);
-    pcnt_counter_resume(this->encoder);
-    // pcnt_set_mode(this->encoder, PCNT_CHANNEL_0, PCNT_COUNT_INC, PCNT_COUNT_INC, PCNT_MODE_KEEP, PCNT_MODE_KEEP);
+    pcnt_config.counter_h_lim = 1000;
+    pcnt_config.counter_l_lim = -1000;
+    esp_err_t err = pcnt_unit_config(&pcnt_config);
 
-    this->encoder2 = pcntUnit;
-//␛[0;31mE (314) ledc: ledc_channel_config(380): gpio_num argument is invalid␛[0m
-// ␛[0;31mE (324) pcnt: _pcnt_set_event_value(197): PCNT limit value error␛[0m
     pcnt_config_t pcnt_config2 = {};
     pcnt_config2.pulse_gpio_num = this->encoderB;
     pcnt_config2.ctrl_gpio_num = this->encoderA;
     pcnt_config2.channel = PCNT_CHANNEL_1;
-    pcnt_config2.unit = this->encoder2;
+    pcnt_config2.unit = this->encoder;
     pcnt_config2.pos_mode = PCNT_COUNT_INC;
-    pcnt_config2.neg_mode = PCNT_COUNT_INC;
-    pcnt_config2.lctrl_mode = PCNT_MODE_KEEP;
+    pcnt_config2.neg_mode = PCNT_COUNT_DEC;
+    pcnt_config2.lctrl_mode = PCNT_MODE_REVERSE;
     pcnt_config2.hctrl_mode = PCNT_MODE_KEEP;
-    pcnt_config.counter_h_lim = (1000);
-    pcnt_config.counter_l_lim = 0;
-    pcnt_unit_config(&pcnt_config2);
-    pcnt_counter_pause(this->encoder2);
-    pcnt_counter_clear(this->encoder2);
-    pcnt_filter_disable(this->encoder2);
-    pcnt_intr_disable(this->encoder2);
-    pcnt_counter_resume(this->encoder2);
+    pcnt_config2.counter_h_lim = 1000;
+    pcnt_config2.counter_l_lim = -1000;
+    err += pcnt_unit_config(&pcnt_config2);
 
-    // pcnt_set_mode(this->encoder2, PCNT_CHANNEL_0, PCNT_COUNT_INC, PCNT_COUNT_INC, PCNT_MODE_KEEP, PCNT_MODE_KEEP);
+    err += pcnt_counter_pause(PCNT_UNIT_0);
+    err += pcnt_counter_clear(PCNT_UNIT_0);
+    err += pcnt_filter_disable(PCNT_UNIT_0);
+    err += pcnt_intr_disable(PCNT_UNIT_0);
+    err +=  pcnt_counter_resume(PCNT_UNIT_0);
 
+    printf("Encoder initialized %d", err);
 
     softStop();
 
@@ -99,40 +90,79 @@ inline void motor::softStop() {
 
 
 
-inline void motor::power(const uint16_t &pow) {
-    ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, pow);
+inline void motor::power(const uint32_t &pow) {
+    if(pow > MAX_POWER) ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, MAX_POWER);
+    else ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, pow);
+
     ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
 }
 
 
-
-inline void motor::compute(uint16_t &pow) {
+void motor::compute(const int16_t &inputd, uint32_t &pow, int8_t &direction) {
     int64_t currentTime = esp_timer_get_time();
     int64_t elapsedTime = currentTime - this->previousTime;
     int16_t input;
-    pcnt_get_counter_value(encoder, &input);
-    xQueueSendToBack(speedQueue, &input, 0);
+    pcnt_get_counter_value(this->encoder, &input);
+    // int16_t input[3] = {};
+    // pcnt_get_counter_value(this->encoder, &input[0]);
+    // pcnt_get_counter_value(this->encoder2, &input[1]);
+    pcnt_counter_clear(this->encoder);
+    // pcnt_counter_clear(this->encoder2);
 
-    this->kp = 1;
-    this->ki = 0.01;
-    this->kd = 0.1;
+    // input[2] = input[0] + input[1];
+    // xQueueSendToBack(speedQueue, &input[2], 0);
 
-    int error = this->setpoint - input;
+    int error = (unsigned int)this->setpoint - input;
+   
+
     this->integralError += error * elapsedTime; //calka
-    if(this->integralError > 200) this->integralError = 400;
-    if(this->integralError < -200) this->integralError = -400;
+    if(this->integralError > MAX_INTEGRAL) this->integralError = MAX_INTEGRAL;
+    if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
     this->derivativeError = (error - this->lastError)/elapsedTime; //pochodna
     this->lastError = error;
     this->previousTime = currentTime;
-    pcnt_counter_clear(encoder);
-    pow = kp*error + ki*this->integralError + kd*this->derivativeError;    
+
+
+    this->kp = 4000;
+    this->ki = 100;
+    this->kd = 0;
+
+    int p = kp*error;
+    int i = ki*this->integralError;
+    int d = kd*this->derivativeError;
+
+
+    int32_t pid = p + i + d;
+    
+
+    pow = abs(pid); 
+    if(error > 0) direction = 1;
+    else if(error < 0) direction = -1;
+    else direction = 0;
+
+    printf("Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d --> ", error, input, p, i, d, pid);
+
 }
 
-void motor::drive() {
-    uint16_t val;
-    this->compute(val);
-    this->power(val);
-    if(this->setpoint > 0) this->direction(Direction::FORWARD);
-    else if(this->setpoint < 0) this->direction(Direction::BACKWARD);
+void motor::drive(const int16_t &input) {
+    int8_t dir;
+    uint32_t pow;
+    this->compute(input, pow, dir);
+    this->power(pow);
+
+    if(dir > 0) {
+        dir = 1; 
+        this->direction(Direction::FORWARD);
+    }
+    else if(dir < 0) {
+        dir = -1;
+        this->direction(Direction::BACKWARD);
+    }
+
+    if(this->setpoint == 0) {
+        this->softStop();
+        dir = 0;
+    }
+    printf("Setpoint: %+4d, Power: %d%%, Direction: %d,  Input: %d\n", this->setpoint, (pow*100)/MAX_POWER, dir, input);
 }
 
