@@ -47,9 +47,9 @@ https://github.com/mbober1/RoboVision
 ## Features
 - [X] DIY energy pack
 - [X] WiFi connection
-- [ ] PID motor power controler
-- [ ] RoboVision integration
-- [ ] Circuit board design
-- [ ] Chassis design
+- [X] PID motor power controler
+- [X] RoboVision integration
+- [X] Circuit board design
+- [X] Chassis design
 
 
