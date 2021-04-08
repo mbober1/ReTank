@@ -44,29 +44,35 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 // }
 
 
-static void distanceTask(void*) {
-    Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
+// static void distanceTask(void*) {
+//     Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
 
-    while (1)
-    {  
-        int distance = sensor.measure();
-        // printf("Distance: %d\n", distance);
-        if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
-        vTaskDelay(pdMS_TO_TICKS(30));
-    }
-    vTaskDelete(NULL);
-}
+//     while (1)
+//     {  
+//         int distance = sensor.measure();
+//         // printf("Distance: %d\n", distance);
+//         if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
+//         vTaskDelay(pdMS_TO_TICKS(30));
+//     }
+//     vTaskDelete(NULL);
+// }
 
 static void robotDriver(void*) {
     // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_2, PCNT_UNIT_3);
     EnginePacket packet(0,0);
     int64_t currentTime = 0;
-    motor engin(GPIO_NUM_12, GPIO_NUM_32, 2, 14, 33, PWMCHANNEL, PCNT_UNIT_0);
+    // motor engin(GPIO_NUM_12, GPIO_NUM_32, 2, 14, 33, PWMCHANNEL, PCNT_UNIT_0);
+    // motor engim(GPIO_NUM_27, GPIO_NUM_25, 4, 39, 35, PWMCHANNEL, PCNT_UNIT_1);
 
+    motor engin(GPIO_NUM_25, GPIO_NUM_26, 32, 36, 39, PWMCHANNEL, PCNT_UNIT_0);
+    motor engim(GPIO_NUM_27, GPIO_NUM_14, 33, 34, 35, PWMCHANNEL, PCNT_UNIT_1);
     while (1) {
         xQueueReceive(engineQueue, &packet, 0);
         engin.setpoint = packet.left/2;
+        engim.setpoint = packet.left/2;
+
         engin.drive();
+        engim.drive();
 
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
         TIMERG0.wdt_feed=1;
@@ -154,62 +160,8 @@ extern "C" void app_main()
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
     xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-
-
-
-    while (1) {
-        vTaskSuspend(NULL);
-    }
-
-
-
-    // printf("Reading sensor data:\n");
-    // mpud::raw_axes_t accelRaw;   // x, y, z axes as int16
-    // mpud::raw_axes_t gyroRaw;    // x, y, z axes as int16
-    // mpud::float_axes_t accelG;   // accel axes in (g) gravity format
-    // mpud::float_axes_t gyroDPS;  // gyro axes in (DPS) º/s format
-    // while (true) {
-    //     // Read
-    //     MPU.acceleration(&accelRaw);  // fetch raw data from the registers
-    //     MPU.rotation(&gyroRaw);       // fetch raw data from the registers
-    //     // MPU.motion(&accelRaw, &gyroRaw);  // read both in one shot
-    //     // Convert
-    //     accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);
-    //     gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);
-    //     // Debug
-    //     printf("accel: [%+6.2f %+6.2f %+6.2f ] (G) \t", accelG.x, accelG.y, accelG.z);
-    //     printf("gyro: [%+7.2f %+7.2f %+7.2f ] (º/s)\n", gyroDPS[0], gyroDPS[1], gyroDPS[2]);
-    //     vTaskDelay(100 / portTICK_PERIOD_MS);
-    // }
-
-    // while (1) {
-        
-    //     mpud::raw_axes_t accelRaw;     // holds x, y, z axes as int16
-    //     mpud::raw_axes_t gyroRaw;      // holds x, y, z axes as int16
-    //     MPU.acceleration(&accelRaw);  // fetch raw data from the registers
-    //     MPU.rotation(&gyroRaw);       // fetch raw data from the registers
-    //     printf("accel: %+d %+d %+d\n", accelRaw.x, accelRaw.y, accelRaw.z);
-    //     printf("gyro: %+d %+d %+d\n", gyroRaw[0], gyroRaw[1], gyroRaw[2]);
-
-    //     mpud::float_axes_t accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);  // raw data to gravity
-    //     mpud::float_axes_t gyroDPS = mpud::gyroDecPerSec(gyroRaw, mpud::GYRO_FS_500DPS);  // raw data to º/s
-    //     printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
-    //     printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
-
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    //     // int64_t currentTime = esp_timer_get_time();
-    //     // if(currentTime - previousTime > 100000) {
-    //     //     previousTime = currentTime;
-
-    //     //     pcnt_get_counter_value(Robot.engine[0].encoder, &input[0]);
-    //     //     pcnt_get_counter_value(Robot.engine[0].encoder2, &input[1]);
-    //     //     pcnt_get_counter_value(Robot.engine[1].encoder, &input[2]);
-    //     //     pcnt_get_counter_value(Robot.engine[1].encoder2, &input[3]);
-    //     //     // printf("Setpoint: %d, ENC: %d, Error: %f\n", left, input1 + input2, e1);
-    //     //     // printf("L1: %d, L2: %d, R1: %d, R2: %d\n", input[0], input[1], input[2], input[3]);
-    //     // }
-
-    // }
+    
+    vTaskSuspend(NULL);
 }
