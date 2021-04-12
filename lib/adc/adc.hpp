@@ -8,4 +8,5 @@ class myADC {
 public:
     myADC();
     float getVoltage();
+    int getPercentage();
 };
