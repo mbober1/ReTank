@@ -53,7 +53,6 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 //     vTaskDelete(NULL);
 // }
 
-unsigned long sensor1Time;
 int distance;
 
 static void distanceTask(void*) {

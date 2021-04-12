@@ -1,7 +1,7 @@
 #include "ultrasonic.hpp"
 
 extern QueueHandle_t distanceQueue;
-extern unsigned long sensor1Time;
+unsigned long sensor1Time;
 extern int distance;
 
 
