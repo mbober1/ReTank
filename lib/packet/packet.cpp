@@ -98,6 +98,7 @@ std::string ClosePacket::prepare() {
 
 
 EnginePacket::EnginePacket(const int8_t &left, const int8_t &right) : left(left), right(right) {}
+EnginePacket::EnginePacket() {}
 EnginePacket::~EnginePacket() {}
 
 EnginePacket::EnginePacket(const std::string &data) {

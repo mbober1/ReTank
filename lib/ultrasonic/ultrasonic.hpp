@@ -1,19 +1,15 @@
+#pragma once
 #include <driver/gpio.h>
 #include <freertos/FreeRTOS.h>
+#include "driver/ledc.h"
 #include "esp_log.h"
 
-const uint32_t pingTIMEOUT = 20000;
-const uint32_t echoTIMEOUT = 70000;
-const uint8_t timeToCM = 58;
-
 class Ultrasonic {
-
     gpio_num_t triggerPin, echoPin;
+    ledc_channel_config_t ledc_channel = {};
+    ledc_timer_config_t ledc_timer = {};
 
 public:
     Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin);
     ~Ultrasonic();
-    uint measure();
 };
-
-

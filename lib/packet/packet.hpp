@@ -29,6 +29,7 @@ class EnginePacket : public Packet {
 public:
     EnginePacket(const std::string &data);
     EnginePacket(const int8_t &left, const int8_t &right);
+    EnginePacket();
     ~EnginePacket();
     virtual std::string prepare();
     int left;
@@ -59,18 +60,6 @@ public:
     int distance;
     virtual char getType();
 };
-
-
-
-// class NamePacket : public Packet {
-// public:
-//     NamePacket(const std::string &data);
-//     NamePacket(const char* name);
-//     ~NamePacket();
-//     virtual std::string prepare();
-//     std::string name;
-//     virtual char getType();
-// };
 
 
 

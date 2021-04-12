@@ -96,7 +96,7 @@ inline void motor::power(const uint32_t &pow) {
 }
 
 
-void motor::compute(uint32_t &pow, int8_t &direction) {
+void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
     int64_t currentTime = esp_timer_get_time();
     int64_t elapsedTime = currentTime - this->previousTime;
     int16_t input;
@@ -104,7 +104,7 @@ void motor::compute(uint32_t &pow, int8_t &direction) {
     pcnt_counter_clear(this->encoder);
     // xQueueSendToBack(speedQueue, &input[2], 0);
 
-    int error = (unsigned int)this->setpoint - input;
+    int error = setpoint/2 - input;
    
 
     this->integralError += error * elapsedTime; //calka
@@ -135,10 +135,10 @@ void motor::compute(uint32_t &pow, int8_t &direction) {
     // printf("Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d --> ", error, input, p, i, d, pid);
 }
 
-void motor::drive() {
+void motor::drive(const int &setpoint) {
     int8_t dir;
     uint32_t pow;
-    this->compute(pow, dir);
+    this->compute(pow, dir, setpoint);
     this->power(pow);
 
     if(dir > 0) {
@@ -150,7 +150,7 @@ void motor::drive() {
         this->direction(Direction::BACKWARD);
     }
 
-    if(this->setpoint == 0) {
+    if(setpoint == 0) {
         this->softStop();
         dir = 0;
     }

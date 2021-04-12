@@ -7,13 +7,11 @@
 #include "freertos/task.h"
 #include "esp_pm.h"
 
-// #include "secrets.hpp"
-
 #include <udp.hpp>
 #include <tcp.hpp>
 #include <wifi.hpp>
 #include <robot.hpp>
-// #include <I2Cbus.hpp>
+#include <I2Cbus.hpp>
 // #include <MPU.hpp>
 // #include "esp_log.h"
 // #include "esp_err.h"
@@ -27,6 +25,18 @@
 
 static int udpPort = 8090;
 static int tcpPort = 8091;
+const uint8_t ENC1A = 35;
+const uint8_t ENC1B = 34;
+const uint8_t ENC2A = 33;
+const uint8_t ENC2B = 33;
+const uint8_t PWM1 = 25;
+const gpio_num_t IN1 = GPIO_NUM_26;
+const gpio_num_t IN2 = GPIO_NUM_27;
+const gpio_num_t IN3 = GPIO_NUM_14;
+const gpio_num_t IN4 = GPIO_NUM_12;
+const uint8_t PWM2 = 13;
+const uint8_t PWMCHANNEL = 0;
+
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
@@ -43,51 +53,40 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 //     vTaskDelete(NULL);
 // }
 
+unsigned long sensor1Time;
+float distance1_cm;
 
-// static void distanceTask(void*) {
-//     Ultrasonic sensor(GPIO_NUM_26, GPIO_NUM_17);
+static void distanceTask(void*) {
+    Ultrasonic sensor(GPIO_NUM_4, GPIO_NUM_2);
 
-//     while (1)
-//     {  
-//         int distance = sensor.measure();
-//         // printf("Distance: %d\n", distance);
-//         if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
-//         vTaskDelay(pdMS_TO_TICKS(30));
-//     }
-//     vTaskDelete(NULL);
-// }
-
-static void robotDriver(void*) {
-    // robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_2, PCNT_UNIT_3);
-    EnginePacket packet(0,0);
-    int64_t currentTime = 0;
-    // motor engin(GPIO_NUM_12, GPIO_NUM_32, 2, 14, 33, PWMCHANNEL, PCNT_UNIT_0);
-    // motor engim(GPIO_NUM_27, GPIO_NUM_25, 4, 39, 35, PWMCHANNEL, PCNT_UNIT_1);
-
-    motor engin(GPIO_NUM_25, GPIO_NUM_26, 32, 36, 39, PWMCHANNEL, PCNT_UNIT_0);
-    motor engim(GPIO_NUM_27, GPIO_NUM_14, 33, 34, 35, PWMCHANNEL, PCNT_UNIT_1);
-    while (1) {
-        xQueueReceive(engineQueue, &packet, 0);
-        engin.setpoint = packet.left/2;
-        engim.setpoint = packet.left/2;
-
-        engin.drive();
-        engim.drive();
-
-        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-        TIMERG0.wdt_feed=1;
-        TIMERG0.wdt_wprotect=0;
-        // Robot.setPoint(packet.left/7, packet.left/7);
-        // Robot.autos(input[0]);
-
-        printf("System lag: %lld\n", esp_timer_get_time() - currentTime);
-        currentTime = esp_timer_get_time();
-        // printf("ENC1: %d, ENC2: %d\n", input[0], input[1]);
-        // printf(     "Encoder: %d, PID: %d, Setpoint: %d\n", input[0], pow, engin.setpoint);
-        // vTaskDelay(50 / portTICK_PERIOD_MS);
+    while (1)
+    {  
+        printf("Distance: %f, Sensor time: %ld, \n", distance1_cm, sensor1Time);
+        // if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
     vTaskDelete(NULL);
 }
+
+// static void robotDriver(void*) {
+//     robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_0, PCNT_UNIT_1);
+//     EnginePacket packet;
+//     // int64_t currentTime = 0;
+    
+//     while (1) {
+//         xQueueReceive(engineQueue, &packet, 0);
+//         Robot.drive(packet);
+
+//         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+//         TIMERG0.wdt_feed=1;
+//         TIMERG0.wdt_wprotect=0;
+
+//         // printf("System lag: %lld\n", esp_timer_get_time() - currentTime);
+//         // currentTime = esp_timer_get_time();
+//         // vTaskDelay(50 / portTICK_PERIOD_MS);
+//     }
+//     vTaskDelete(NULL);
+// }
 
 // static void mpuTask(void*) {
 //     MPU_t MPU;
@@ -158,10 +157,10 @@ extern "C" void app_main()
 
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
-    xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
+    // xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-    
+
     vTaskSuspend(NULL);
 }

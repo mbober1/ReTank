@@ -29,14 +29,13 @@ private:
     ledc_timer_config_t ledc_timer = {};
     
 public:
-    int setpoint;
     pcnt_unit_t encoder;
     motor(gpio_num_t in1, gpio_num_t in2, uint8_t pwmPin, uint8_t encoderA, uint8_t encoderB, uint8_t pwmChannel, pcnt_unit_t pcntUnit);
     void direction(const Direction &dir);
     void power(const uint32_t &pow);
-    void compute(uint32_t &pow, int8_t &direction);
+    void compute(uint32_t &pow, int8_t &direction, const int &setpoint);
     void fastStop();
     void softStop();
-    void drive();
+    void drive(const int &setpoint);
 };
 
