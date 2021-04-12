@@ -41,7 +41,7 @@ QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
 // static void batteryTask(void*) {
-//     myADC battery;
+    // myADC battery;
 
 //     while (1)
 //     {
@@ -55,36 +55,28 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
 int distance;
 
-static void distanceTask(void*) {
-    Ultrasonic sensor(GPIO_NUM_4, GPIO_NUM_2);
 
-    while (1)
-    {  
-        printf("Distance: %d\n", distance);
-        vTaskDelay(pdMS_TO_TICKS(30));
+static void robotDriver(void*) {
+    robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_0, PCNT_UNIT_1);
+    EnginePacket packet;
+    // int64_t currentTime = 0;
+    
+    while (1) {
+        if(xQueueReceive(engineQueue, &packet, 0)) {
+            printf("L: %d, R: %d\n", packet.left, packet.right);
+        }
+        Robot.drive(packet);
+
+        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+        TIMERG0.wdt_feed=1;
+        TIMERG0.wdt_wprotect=0;
+
+        // printf("System lag: %lld\n", esp_timer_get_time() - currentTime);
+        // currentTime = esp_timer_get_time();
+        // vTaskDelay(50 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }
-
-// static void robotDriver(void*) {
-//     robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_0, PCNT_UNIT_1);
-//     EnginePacket packet;
-//     // int64_t currentTime = 0;
-    
-//     while (1) {
-//         xQueueReceive(engineQueue, &packet, 0);
-//         Robot.drive(packet);
-
-//         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-//         TIMERG0.wdt_feed=1;
-//         TIMERG0.wdt_wprotect=0;
-
-//         // printf("System lag: %lld\n", esp_timer_get_time() - currentTime);
-//         // currentTime = esp_timer_get_time();
-//         // vTaskDelay(50 / portTICK_PERIOD_MS);
-//     }
-//     vTaskDelete(NULL);
-// }
 
 // static void mpuTask(void*) {
 //     MPU_t MPU;
@@ -138,7 +130,6 @@ extern "C" void app_main()
 
     esp_pm_configure(&power);
 
-    // gpio_install_isr_service(0);
     initialise_wifi();
 
     // I2C_t myI2C(I2C_NUM_0);
@@ -157,8 +148,9 @@ extern "C" void app_main()
     xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
     // xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
+    Ultrasonic sensor(GPIO_NUM_4, GPIO_NUM_2);
 
     vTaskSuspend(NULL);
 }
