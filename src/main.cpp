@@ -54,15 +54,14 @@ QueueHandle_t accelQueue, gyroQueue, speedQueue;
 // }
 
 unsigned long sensor1Time;
-float distance1_cm;
+int distance;
 
 static void distanceTask(void*) {
     Ultrasonic sensor(GPIO_NUM_4, GPIO_NUM_2);
 
     while (1)
     {  
-        printf("Distance: %f, Sensor time: %ld, \n", distance1_cm, sensor1Time);
-        // if(distance > 5) xQueueSendToBack(distanceQueue, &distance, 0);
+        printf("Distance: %d\n", distance);
         vTaskDelay(pdMS_TO_TICKS(30));
     }
     vTaskDelete(NULL);

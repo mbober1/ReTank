@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include "driver/ledc.h"
 #include "esp_log.h"
+#include "freertos/queue.h"
 
 class Ultrasonic {
     gpio_num_t triggerPin, echoPin;
