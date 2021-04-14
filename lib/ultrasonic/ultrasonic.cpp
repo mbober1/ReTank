@@ -17,7 +17,7 @@ static void IRAM_ATTR triggerInterrupt(void* arg)
 static const int echo_num = 2;
 
 
-Ultrasonic::Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin) : triggerPin(triggerPin), echoPin(echoPin)
+Ultrasonic::Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin, ledc_channel_t pwmChannel) : triggerPin(triggerPin), echoPin(echoPin)
 {
     int err = 0;
 
@@ -42,7 +42,7 @@ Ultrasonic::Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin) : triggerPin(t
     ledc_timer.clk_cfg = LEDC_AUTO_CLK;
     err += ledc_timer_config(&ledc_timer);
 
-    ledc_channel.channel = LEDC_CHANNEL_1;
+    ledc_channel.channel = pwmChannel;
     ledc_channel.duty = 2;
     ledc_channel.gpio_num = this->triggerPin;
     ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;

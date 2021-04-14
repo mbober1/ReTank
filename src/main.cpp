@@ -17,47 +17,74 @@
 // #include "esp_err.h"
 // #include "mpu/math.hpp"
 // #include "mpu/types.hpp"
-// #include <adc.hpp>
+#include <adc.hpp>
 #include <ultrasonic.hpp>
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 
-static int udpPort = 8090;
-static int tcpPort = 8091;
-const uint8_t ENC1A = 35;
-const uint8_t ENC1B = 34;
-const uint8_t ENC2A = 33;
-const uint8_t ENC2B = 33;
-const uint8_t PWM1 = 25;
+//UDP/TCP config
+static int UDP_PORT = 8090;
+static int TCP_PORT = 8091;
+
+//motors config
+const gpio_num_t ENC1A = GPIO_NUM_32; //nie chce 35
+const gpio_num_t ENC1B = GPIO_NUM_33;
+const gpio_num_t ENC2A = GPIO_NUM_15;
+const gpio_num_t ENC2B = GPIO_NUM_34;
+
+const gpio_num_t PWM1 = GPIO_NUM_25;
+const gpio_num_t PWM2 = GPIO_NUM_13;
 const gpio_num_t IN1 = GPIO_NUM_26;
 const gpio_num_t IN2 = GPIO_NUM_27;
 const gpio_num_t IN3 = GPIO_NUM_14;
 const gpio_num_t IN4 = GPIO_NUM_12;
-const uint8_t PWM2 = 13;
-const uint8_t PWMCHANNEL = 0;
+const pcnt_unit_t PCNT1 = PCNT_UNIT_0;
+const pcnt_unit_t PCNT2 = PCNT_UNIT_1;
+const ledc_channel_t MOTOR_PWM = LEDC_CHANNEL_0;
+
+//ultrasonic sensor config
+const gpio_num_t TRIG = GPIO_NUM_4;
+const gpio_num_t ECHO = GPIO_NUM_2;
+const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_1;
 
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
-
-// static void batteryTask(void*) {
-    // myADC battery;
-
-//     while (1)
-//     {
-//         int percentage = battery.getVoltage() * 25;
-//         // printf("Voltage: %.2fV | Percentage %3.0d\n", voltage, percentage);
-//         xQueueSendToBack(batteryQueue, &percentage, 0);
-//         vTaskDelay(pdMS_TO_TICKS(1000));
-//     }
-//     vTaskDelete(NULL);
-// }
-
 int distance;
 
 
+static void batteryTask(void*) {
+    myADC battery;
+
+    while (1)
+    {
+        int percentage = battery.getVoltage() * 25;
+        printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
+        xQueueSendToBack(batteryQueue, &percentage, 0);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelete(NULL);
+}
+
+
+
 static void robotDriver(void*) {
-    robot Robot(IN1, IN2, PWM1, PWMCHANNEL, IN3, IN4, PWM2, ENC2A, ENC2B, ENC1A, ENC1B, PCNT_UNIT_0, PCNT_UNIT_1);
+    RobotConfig config = {};
+    config.in1 = IN1;
+    config.in2 = IN2;
+    config.in3 = IN3;
+    config.in4 = IN4;
+    config.pwm1 = PWM1;
+    config.pwm2 = PWM2;
+    config.enc1a = ENC1A;
+    config.enc1b = ENC1B;
+    config.enc2a = ENC2A;
+    config.enc2b = ENC2B;
+    config.pcntUnit1 = PCNT1;
+    config.pcntUnit2 = PCNT2;
+    config.pwmChannel = MOTOR_PWM;
+
+    Robot robot(config);
     EnginePacket packet;
     // int64_t currentTime = 0;
     
@@ -65,7 +92,7 @@ static void robotDriver(void*) {
         if(xQueueReceive(engineQueue, &packet, 0)) {
             printf("L: %d, R: %d\n", packet.left, packet.right);
         }
-        Robot.drive(packet);
+        // robot.drive(packet);
 
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
         TIMERG0.wdt_feed=1;
@@ -127,14 +154,9 @@ extern "C" void app_main()
     power.min_freq_mhz = 240;
     power.max_freq_mhz = 240;
     power.light_sleep_enable = false;
-
     esp_pm_configure(&power);
 
     initialise_wifi();
-
-    // I2C_t myI2C(I2C_NUM_0);
-    // myI2C.begin(GPIO_NUM_21, GPIO_NUM_22, 400000);
-    // myI2C.scanner();
 
     engineQueue = xQueueCreate(5, sizeof(EnginePacket));
     accelQueue = xQueueCreate(5, sizeof(AcceloPacket));
@@ -144,13 +166,12 @@ extern "C" void app_main()
     speedQueue = xQueueCreate(5, sizeof(int));
 
 
-    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)udpPort, 5, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)tcpPort, 4, NULL);
-    // xTaskCreate(robotDriver, "driver", 14096, nullptr, 20, NULL);
-    // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    // xTaskCreate(distanceTask, "distanceTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);
+    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 5, NULL);
+    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)TCP_PORT, 4, NULL);
+    xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
+    xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-    Ultrasonic sensor(GPIO_NUM_4, GPIO_NUM_2);
+    Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
 
     vTaskSuspend(NULL);
 }

@@ -11,6 +11,6 @@ class Ultrasonic {
     ledc_timer_config_t ledc_timer = {};
 
 public:
-    Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin);
+    Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin, ledc_channel_t pwmChannel);
     ~Ultrasonic();
 };
