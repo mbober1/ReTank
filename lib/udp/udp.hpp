@@ -43,23 +43,38 @@ static void udpServerTask(void *port) {
                 ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
                 break;
             } else {
-                std::string x(rx_buffer, len);
+                std::string data(rx_buffer, len);
                 // printf("%s Received %d bytes |   %s\n", TAG, len, x.c_str());
+    
+                printf("Dostalem: %s#\n", data.c_str());
+                int separator = data.find(';');
+                printf("Znalazłem separator na miejscu: %d\n", separator);
+                
+                while(separator != std::string::npos) {
+                    std::string parse = data.substr(0, separator - 1);
+                    data.erase(0, separator);
+                    printf("Nowy string: %s, stary string %s\n", parse.c_str(), data.c_str());
 
-                Packet* packet = Packet::decode(x);
-
-                if (packet != nullptr) {
-                    switch (packet->getType())
-                    {
-                    case 'E':
-                        xQueueSendToBack(engineQueue, packet, 0);
-                        break;
                     
-                    default:
-                        printf("Undefined UDP packet (%d bytes) --> %s \n", len, x.c_str());
-                        break;
-                    }
-                    delete packet;
+
+                    // Packet* packet = Packet::decode(x);
+
+                    // if (packet != nullptr) {
+                    //     switch (packet->getType())
+                    //     {
+                    //     case 'E':
+                    //         xQueueSendToBack(engineQueue, packet, 0);
+                    //         break;
+                        
+                    //     default:
+                    //         printf("Undefined UDP packet (%d bytes) --> %s \n", len, x.c_str());
+                    //         break;
+                    //     }
+                    //     delete packet;
+                    // }
+
+                    separator = data.find(';');
+                    printf("Znalazłem separator na miejscu: %d\n", separator);
                 }
             }
         }

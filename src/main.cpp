@@ -28,7 +28,7 @@ static int UDP_PORT = 8090;
 static int TCP_PORT = 8091;
 
 //motors config
-const gpio_num_t ENC1A = GPIO_NUM_32; //nie chce 35
+const gpio_num_t ENC1A = GPIO_NUM_32; //nie chce 35-39
 const gpio_num_t ENC1B = GPIO_NUM_33;
 const gpio_num_t ENC2A = GPIO_NUM_15;
 const gpio_num_t ENC2B = GPIO_NUM_34;
@@ -59,7 +59,7 @@ static void batteryTask(void*) {
     while (1)
     {
         int percentage = battery.getVoltage() * 25;
-        printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
+        // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
         xQueueSendToBack(batteryQueue, &percentage, 0);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -167,7 +167,7 @@ extern "C" void app_main()
 
 
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 5, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 4096, (void*)TCP_PORT, 4, NULL);
+    xTaskCreate(tcpServerTask, "tcp_server", 14096, (void*)TCP_PORT, 4, NULL);
     xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
     xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);

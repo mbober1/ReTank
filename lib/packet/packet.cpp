@@ -9,7 +9,6 @@ uint8_t Packet::checksum(const std::string &data) {
 
 Packet* Packet::decode(std::string &data) {
     char crc = data.at(data.size() - 1);
-    data.pop_back();
 
     if(Packet::checksum(data) == (uint8_t)crc) {
         char type = data.at(0);
@@ -36,23 +35,18 @@ Packet* Packet::decode(std::string &data) {
         case 'A':
             return new AcceloPacket(data);
 
-        // case 'N':
-            // return new NamePacket(data);
-
         case 'S':
             return new SpeedPacket(data);
 
-
         default:
             return nullptr;
-            printf("unknown packet");
+            printf("unknown packet\n");
             break;
         }
     } else {
-        printf("bad crc :(");
+        printf("bad crc :(\n");
         return nullptr;
     }
-
 }
 
 
@@ -68,8 +62,8 @@ char PingPacket::getType() {
 std::string PingPacket::prepare() {
     std::string tmp;
     tmp += this->getType();
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -88,8 +82,8 @@ char ClosePacket::getType() {
 std::string ClosePacket::prepare() {
     std::string tmp;
     tmp += this->getType();
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -121,8 +115,8 @@ std::string EnginePacket::prepare() {
     tmp += std::to_string(this->left);
     tmp += ' ';
     tmp += std::to_string(this->right);
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -147,8 +141,8 @@ std::string BatteryPacket::prepare() {
     std::string tmp;
     tmp += this->getType();
     tmp += std::to_string(this->level);
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -175,8 +169,8 @@ std::string DistancePacket::prepare() {
     std::string tmp;
     tmp += this->getType();
     tmp += std::to_string(this->distance);
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -219,8 +213,8 @@ std::string GyroPacket::prepare() {
     tmp += std::to_string(this->y);
     tmp += ' ';
     tmp += std::to_string(this->z);
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -262,8 +256,8 @@ std::string AcceloPacket::prepare() {
     tmp += std::to_string(this->y);
     tmp += ' ';
     tmp += std::to_string(this->z);
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
 
@@ -294,7 +288,7 @@ std::string SpeedPacket::prepare() {
     tmp += std::to_string(this->left);
     tmp += ' ';
     tmp += std::to_string(this->right);
-    tmp += ';';
     tmp += Packet::checksum(tmp);
+    tmp += ';';
     return tmp;
 }
