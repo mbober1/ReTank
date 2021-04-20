@@ -92,7 +92,7 @@ static void robotDriver(void*) {
         if(xQueueReceive(engineQueue, &packet, 0)) {
             printf("L: %d, R: %d\n", packet.left, packet.right);
         }
-        // robot.drive(packet);
+        robot.drive(packet);
 
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
         TIMERG0.wdt_feed=1;

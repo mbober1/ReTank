@@ -84,7 +84,7 @@ void tcpServerTask(void* port) {
             TaskHandle_t tx = NULL;
 
             // xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
-            printf("dupa\r\n");
+            printf("dddd\r\n");
             clientRX(sock); //wait until client connected
 
             printf("TCP TX kill task \n");
@@ -116,35 +116,35 @@ void clientRX(const int &sock) {
 
 
             printf("TCP | Dostalem: %s\n", data.c_str());
-                int separator = data.find(';');
-                printf("Znalazłem separator na miejscu: %d\n", separator);
+            int separator = data.find(';');
+            printf("Znalazłem separator na miejscu: %d\n", separator);
+            
+            while(separator != std::string::npos) {
+                std::string parse = data.substr(0, separator);
+                data.erase(0, separator + 1);
+                printf("Nowy string: %s\n", parse.c_str());
                 
-                while(separator != std::string::npos) {
-                    std::string parse = data.substr(0, separator);
-                    data.erase(0, separator + 1);
-                    printf("Nowy string: %s\n", parse.c_str());
-                    
-                    Packet* packet = Packet::decode(parse);
-                    if (packet != nullptr) {
-                        switch (packet->getType())
-                        {
-                        case 'P': {
-                            printf("PING!\n");
-                            std::string data = PingPacket().prepare();
-                            send((int)sock, data.c_str(), data.size(), 0);
-                            break;
-                        }
-
-                        default:
-                            printf("Undefined UDP packet (%d bytes) --> %s \n", len, data.c_str());
-                            break;
-                        }
-                        delete packet;
+                Packet* packet = Packet::decode(parse);
+                if (packet != nullptr) {
+                    switch (packet->getType())
+                    {
+                    case 'P': {
+                        printf("PING!\n");
+                        std::string data = PingPacket().prepare();
+                        send((int)sock, data.c_str(), data.size(), 0);
+                        break;
                     }
-                    separator = data.find(';');
-                    printf("Znalazłem separator na miejscu: %d\n", separator);
+
+                    default:
+                        printf("Undefined UDP packet (%d bytes) --> %s \n", len, parse.c_str());
+                        break;
+                    }
+                    delete packet;
                 }
-                printf("Koniec wiadomości\n\n");
+                separator = data.find(';');
+                printf("Znalazłem separator na miejscu: %d\n", separator);
+            }
+            printf("Koniec wiadomości\n\n");
         }
     } while (len > 0);
     printf("TCP RX delete\n");

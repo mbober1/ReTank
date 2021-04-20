@@ -46,35 +46,32 @@ static void udpServerTask(void *port) {
                 std::string data(rx_buffer, len);
                 // printf("%s Received %d bytes |   %s\n", TAG, len, x.c_str());
     
-                printf("Dostalem: %s#\n", data.c_str());
+                // printf("UDP | Dostalem: %s#\n", data.c_str());
                 int separator = data.find(';');
-                printf("Znalazłem separator na miejscu: %d\n", separator);
+                // printf("Znalazłem separator na miejscu: %d\n", separator);
                 
                 while(separator != std::string::npos) {
-                    std::string parse = data.substr(0, separator - 1);
-                    data.erase(0, separator);
-                    printf("Nowy string: %s, stary string %s\n", parse.c_str(), data.c_str());
+                    std::string parse = data.substr(0, separator);
+                    data.erase(0, separator + 1);
+                    // printf("Nowy string: %s\n", parse.c_str());
 
-                    
+                    Packet* packet = Packet::decode(parse);
 
-                    // Packet* packet = Packet::decode(x);
-
-                    // if (packet != nullptr) {
-                    //     switch (packet->getType())
-                    //     {
-                    //     case 'E':
-                    //         xQueueSendToBack(engineQueue, packet, 0);
-                    //         break;
+                    if (packet != nullptr) {
+                        switch (packet->getType())
+                        {
+                        case 'E':
+                            xQueueSendToBack(engineQueue, packet, 0);
+                            break;
                         
-                    //     default:
-                    //         printf("Undefined UDP packet (%d bytes) --> %s \n", len, x.c_str());
-                    //         break;
-                    //     }
-                    //     delete packet;
-                    // }
-
+                        default:
+                            printf("Undefined UDP packet (%d bytes) --> %s \n", len, parse.c_str());
+                            break;
+                        }
+                        delete packet;
+                    }
                     separator = data.find(';');
-                    printf("Znalazłem separator na miejscu: %d\n", separator);
+                    // printf("Znalazłem separator na miejscu: %d\n", separator);
                 }
             }
         }
