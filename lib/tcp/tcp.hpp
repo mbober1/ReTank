@@ -11,6 +11,7 @@
 
 extern QueueHandle_t batteryQueue;
 extern QueueHandle_t distanceQueue;
+extern QueueHandle_t speedQueue;
 
 void clientRX(const int &sock);
 void clientTX(void* sock);
@@ -83,7 +84,7 @@ void tcpServerTask(void* port) {
 
             TaskHandle_t tx = NULL;
 
-            // xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
+            xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
             printf("dddd\r\n");
             clientRX(sock); //wait until client connected
 
@@ -153,11 +154,17 @@ void clientRX(const int &sock) {
 
 void clientTX(void* sock) { //sending
         int battery, distance;
+        uint16_t speed;
         printf("TCP TX init | Socket: %d\n", (int)sock);
 
         while(true) {
             if(xQueueReceive(batteryQueue, &battery, 0) == pdTRUE) {
                 std::string data = BatteryPacket(battery).prepare();
+                send((int)sock, data.c_str(), data.size(), 0);
+            }
+
+            if(xQueueReceive(speedQueue, &speed, 0) == pdTRUE) {
+                std::string data = SpeedPacket(speed, speed).prepare();
                 send((int)sock, data.c_str(), data.size(), 0);
             }
 

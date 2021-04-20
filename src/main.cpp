@@ -162,7 +162,7 @@ extern "C" void app_main()
     gyroQueue = xQueueCreate(5, sizeof(GyroPacket));
     batteryQueue = xQueueCreate(5, sizeof(int));
     distanceQueue = xQueueCreate(5, sizeof(int));
-    speedQueue = xQueueCreate(5, sizeof(int));
+    speedQueue = xQueueCreate(5, sizeof(int16_t));
 
 
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 5, NULL);

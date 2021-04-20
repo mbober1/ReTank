@@ -17,6 +17,7 @@ enum class Direction {
 
 #define MAX_POWER 1023
 #define MAX_INTEGRAL 100
+const float speedVar = ((5 * 3.14) / 440) * 1000; // 0,05m * PI / 440 imp / 10us 
 
 class motor
 {

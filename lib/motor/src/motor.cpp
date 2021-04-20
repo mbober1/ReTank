@@ -117,7 +117,6 @@ void motor::compute(const int &setpoint) {
     int16_t input;
     pcnt_get_counter_value(this->encoder, &input);
     pcnt_counter_clear(this->encoder);
-    // xQueueSendToBack(speedQueue, &input[2], 0);
 
     int epsilon = setpoint/2 - input;
    
@@ -149,6 +148,9 @@ void motor::compute(const int &setpoint) {
     epsilonOld = epsilon;
 
     printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow);
+
+    // input = abs(input) * speedVar;
+    // xQueueSendToBack(speedQueue, &input, 0);
 }
 
 

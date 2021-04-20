@@ -45,6 +45,5 @@ Robot::Robot(const RobotConfig &config)
 
 inline void Robot::drive(EnginePacket &packet) {
     engine[0].compute(packet.left);
-    // engine[1].drive(50);
-    // engine[1].drive(packet.right);
+    // engine[1].compute(packet.left);
 }
