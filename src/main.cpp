@@ -85,23 +85,23 @@ static void robotDriver(void*) {
 
     Robot robot(config);
     EnginePacket packet;
-    int64_t currentTime = 0;
-    int16_t input[2];
+    // int64_t currentTime = 0;
+    // int16_t input[2];
     
     while (1) {
         if(xQueueReceive(engineQueue, &packet, 0)) {
             printf("L: %d, R: %d\n", packet.left, packet.right);
         }
-        robot.drive(packet);
+        // robot.drive(packet);
 
-        // TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-        // TIMERG0.wdt_feed=1;
-        // TIMERG0.wdt_wprotect=0;
+        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+        TIMERG0.wdt_feed=1;
+        TIMERG0.wdt_wprotect=0;
         // pcnt_get_counter_value(PCNT1, input);
         // pcnt_get_counter_value(PCNT2, input+1);
         // printf("PCNT1: %d, PCNT2: %d\n", input[0], input[1]);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        currentTime = esp_timer_get_time();
+        // currentTime = esp_timer_get_time();
     }
     vTaskDelete(NULL);
 }
