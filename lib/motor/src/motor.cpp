@@ -1,7 +1,7 @@
 #include "motor.hpp"
 
 
-motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t pwmPin, gpio_num_t encoderA, gpio_num_t encoderB, ledc_channel_t pwmChannel, pcnt_unit_t pcntUnit) : in1(in1), in2(in2), pwmPin(pwmPin), encoderA(encoderA), encoderB(encoderB) {
+motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t encoderA, gpio_num_t encoderB, gpio_num_t pwmPin, ledc_channel_t pwmChannel, pcnt_unit_t pcntUnit) : in1(in1), in2(in2), pwmPin(pwmPin) {
     esp_err_t err;
 
     gpio_config_t in1_conf = {};
@@ -35,6 +35,9 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t pwmPin, gpio_num_t encod
     if(!err) printf("Motor %d PWM initialized\n", pcntUnit);
     else printf("Encoder %d PWM failed with error: %d\n", pcntUnit, err);
 
+    printf("Encoder %d Config: \n", pcntUnit);
+    printf("- ENCA = %d\n", encoderA);
+    printf("- ENCB = %d\n", encoderB);
 
     pcnt_config_t pcnt_config = {};
     pcnt_config.pulse_gpio_num = encoderA;
@@ -75,7 +78,10 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t pwmPin, gpio_num_t encod
 
     this->encoder = pcntUnit;
     this->integralError = 0;
-    this->lastError = 0;
+    this->epsilonOld = 0;
+    this->epsilonSuma = 0;
+    this->derivativeError = 0;
+    this->previousTime = 0;
 }
 
 
@@ -109,29 +115,23 @@ inline void motor::power(const uint32_t &pow) {
 
 
 void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
-    int64_t currentTime = esp_timer_get_time();
-    int64_t elapsedTime = currentTime - this->previousTime;
     int16_t input;
     pcnt_get_counter_value(this->encoder, &input);
     pcnt_counter_clear(this->encoder);
     // xQueueSendToBack(speedQueue, &input[2], 0);
 
-    int error = setpoint/2 - input;
+    int epsilon = setpoint/2 - input;
    
-
-    this->integralError += error * elapsedTime; //calka
+    this->integralError+= epsilon;
     if(this->integralError > MAX_INTEGRAL) this->integralError = MAX_INTEGRAL;
-    if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
-    this->derivativeError = (error - this->lastError)/elapsedTime; //pochodna
-    this->lastError = error;
-    this->previousTime = currentTime;
+    else if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
+    this->derivativeError = epsilon - epsilonOld;
 
-
-    this->kp = 4000;
-    this->ki = 250;
+    this->kp = 200;
+    this->ki = 30;
     this->kd = 0;
 
-    int p = kp*error;
+    int p = kp*epsilon;
     int i = ki*this->integralError;
     int d = kd*this->derivativeError;
 
@@ -140,11 +140,12 @@ void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
     
 
     pow = abs(pid); 
-    if(error > 0) direction = 1;
-    else if(error < 0) direction = -1;
+    if(pid > 0) direction = 1;
+    else if(pid < 0) direction = -1;
     else direction = 0;
+    epsilonOld = epsilon;
 
-    // printf("Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d --> ", error, input, p, i, d, pid);
+    printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d, dir: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow, direction);
 }
 
 void motor::drive(const int &setpoint) {
@@ -167,6 +168,6 @@ void motor::drive(const int &setpoint) {
         dir = 0;
     }
 
-    // printf("Setpoint: %+4d, Power: %d%%, Direction: %d\n", this->setpoint, (pow*100)/MAX_POWER, dir);
+    // printf("Setpoint: %+4d, Power: %d%%, Direction: %d\n", setpoint, (pow*100)/MAX_POWER, dir);
 }
 

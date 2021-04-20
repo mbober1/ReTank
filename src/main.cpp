@@ -33,12 +33,12 @@ const gpio_num_t ENC1B = GPIO_NUM_33;
 const gpio_num_t ENC2A = GPIO_NUM_15;
 const gpio_num_t ENC2B = GPIO_NUM_34;
 
-const gpio_num_t PWM1 = GPIO_NUM_25;
-const gpio_num_t PWM2 = GPIO_NUM_13;
-const gpio_num_t IN1 = GPIO_NUM_26;
-const gpio_num_t IN2 = GPIO_NUM_27;
-const gpio_num_t IN3 = GPIO_NUM_14;
-const gpio_num_t IN4 = GPIO_NUM_12;
+const gpio_num_t PWM1 = GPIO_NUM_12;
+const gpio_num_t PWM2 = GPIO_NUM_26;
+const gpio_num_t IN1 = GPIO_NUM_13;
+const gpio_num_t IN2 = GPIO_NUM_14;
+const gpio_num_t IN3 = GPIO_NUM_27;
+const gpio_num_t IN4 = GPIO_NUM_25;
 const pcnt_unit_t PCNT1 = PCNT_UNIT_0;
 const pcnt_unit_t PCNT2 = PCNT_UNIT_1;
 const ledc_channel_t MOTOR_PWM = LEDC_CHANNEL_0;
@@ -50,21 +50,20 @@ const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_1;
 
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
-int distance;
 
 
-static void batteryTask(void*) {
-    myADC battery;
+// static void batteryTask(void*) {
+//     myADC battery;
 
-    while (1)
-    {
-        int percentage = battery.getVoltage() * 25;
-        // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
-        xQueueSendToBack(batteryQueue, &percentage, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    vTaskDelete(NULL);
-}
+//     while (1)
+//     {
+//         int percentage = battery.getVoltage() * 25;
+//         // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
+//         xQueueSendToBack(batteryQueue, &percentage, 0);
+//         vTaskDelay(pdMS_TO_TICKS(1000));
+//     }
+//     vTaskDelete(NULL);
+// }
 
 
 
@@ -86,21 +85,23 @@ static void robotDriver(void*) {
 
     Robot robot(config);
     EnginePacket packet;
-    // int64_t currentTime = 0;
+    int64_t currentTime = 0;
+    int16_t input[2];
     
     while (1) {
         if(xQueueReceive(engineQueue, &packet, 0)) {
             printf("L: %d, R: %d\n", packet.left, packet.right);
         }
-        // robot.drive(packet);
+        robot.drive(packet);
 
-        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-        TIMERG0.wdt_feed=1;
-        TIMERG0.wdt_wprotect=0;
-
-        // printf("System lag: %lld\n", esp_timer_get_time() - currentTime);
-        // currentTime = esp_timer_get_time();
-        // vTaskDelay(50 / portTICK_PERIOD_MS);
+        // TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+        // TIMERG0.wdt_feed=1;
+        // TIMERG0.wdt_wprotect=0;
+        // pcnt_get_counter_value(PCNT1, input);
+        // pcnt_get_counter_value(PCNT2, input+1);
+        // printf("PCNT1: %d, PCNT2: %d\n", input[0], input[1]);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        currentTime = esp_timer_get_time();
     }
     vTaskDelete(NULL);
 }
@@ -150,11 +151,11 @@ static void robotDriver(void*) {
 
 extern "C" void app_main()
 {
-    esp_pm_config_esp32_t power = {};
-    power.min_freq_mhz = 240;
-    power.max_freq_mhz = 240;
-    power.light_sleep_enable = false;
-    esp_pm_configure(&power);
+    // esp_pm_config_esp32_t power = {};
+    // power.min_freq_mhz = 240;
+    // power.max_freq_mhz = 240;
+    // power.light_sleep_enable = false;
+    // esp_pm_configure(&power);
 
     initialise_wifi();
 
@@ -169,7 +170,7 @@ extern "C" void app_main()
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 5, NULL);
     xTaskCreate(tcpServerTask, "tcp_server", 14096, (void*)TCP_PORT, 4, NULL);
     xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
-    xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
     Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
 

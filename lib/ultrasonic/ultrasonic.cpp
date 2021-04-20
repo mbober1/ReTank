@@ -1,9 +1,5 @@
 #include "ultrasonic.hpp"
 
-extern QueueHandle_t distanceQueue;
-unsigned long sensor1Time;
-extern int distance;
-
 
 static void IRAM_ATTR triggerInterrupt(void* arg)
 {
@@ -14,13 +10,11 @@ static void IRAM_ATTR triggerInterrupt(void* arg)
     else sensor1Time = esp_timer_get_time();
 }
 
-static const int echo_num = 2;
-
 
 Ultrasonic::Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin, ledc_channel_t pwmChannel) : triggerPin(triggerPin), echoPin(echoPin)
 {
     int err = 0;
-
+    int echo_num = echoPin;
     err += gpio_set_direction(this->triggerPin, GPIO_MODE_OUTPUT);
     err += gpio_set_level(this->triggerPin, 0);
 

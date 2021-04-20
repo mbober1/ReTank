@@ -5,6 +5,11 @@
 #include "esp_log.h"
 #include "freertos/queue.h"
 
+static int distance;
+static unsigned long sensor1Time;
+extern QueueHandle_t distanceQueue;
+
+
 class Ultrasonic {
     gpio_num_t triggerPin, echoPin;
     ledc_channel_config_t ledc_channel = {};
