@@ -17,8 +17,8 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t encoderA, gpio_num_t enc
     if(!err) printf("Motor %d GPIO initialized\n", pcntUnit);
     else printf("Motor %d GPIO failed with error: %d\n", pcntUnit, err);
 
-    ledc_timer.duty_resolution = LEDC_TIMER_16_BIT;
-    ledc_timer.freq_hz = 1220;
+    ledc_timer.duty_resolution = LEDC_TIMER_10_BIT;
+    ledc_timer.freq_hz = 25000;
     ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
     ledc_timer.timer_num = LEDC_TIMER_0;
     ledc_timer.clk_cfg = LEDC_AUTO_CLK;
@@ -32,7 +32,8 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t encoderA, gpio_num_t enc
     ledc_channel.timer_sel  = LEDC_TIMER_0;
     err += ledc_channel_config(&ledc_channel);
 
-    if(!err) printf("Motor %d PWM initialized\n", pcntUnit);
+
+    if(!err) printf("Motor %d PWM initialized, freq %d\n", pcntUnit, ledc_get_freq(LEDC_HIGH_SPEED_MODE, LEDC_TIMER_0));
     else printf("Encoder %d PWM failed with error: %d\n", pcntUnit, err);
 
     printf("Encoder %d Config: \n", pcntUnit);
@@ -127,8 +128,8 @@ void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
     else if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
     this->derivativeError = epsilon - epsilonOld;
 
-    this->kp = 200;
-    this->ki = 30;
+    this->kp = 20;
+    this->ki = 0;
     this->kd = 0;
 
     int p = kp*epsilon;

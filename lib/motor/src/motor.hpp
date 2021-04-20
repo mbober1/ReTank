@@ -15,7 +15,7 @@ enum class Direction {
 };
 
 
-#define MAX_POWER (1<<16)
+#define MAX_POWER 10230
 #define MAX_INTEGRAL 100
 
 class motor

@@ -89,9 +89,7 @@ static void robotDriver(void*) {
     // int16_t input[2];
     
     while (1) {
-        if(xQueueReceive(engineQueue, &packet, 0)) {
-            printf("L: %d, R: %d\n", packet.left, packet.right);
-        }
+        xQueueReceive(engineQueue, &packet, 0);
         robot.drive(packet);
 
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
@@ -100,7 +98,7 @@ static void robotDriver(void*) {
         // pcnt_get_counter_value(PCNT1, input);
         // pcnt_get_counter_value(PCNT2, input+1);
         // printf("PCNT1: %d, PCNT2: %d\n", input[0], input[1]);
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        // vTaskDelay(10 / portTICK_PERIOD_MS);
         // currentTime = esp_timer_get_time();
     }
     vTaskDelete(NULL);
@@ -151,11 +149,11 @@ static void robotDriver(void*) {
 
 extern "C" void app_main()
 {
-    // esp_pm_config_esp32_t power = {};
-    // power.min_freq_mhz = 240;
-    // power.max_freq_mhz = 240;
-    // power.light_sleep_enable = false;
-    // esp_pm_configure(&power);
+    esp_pm_config_esp32_t power = {};
+    power.min_freq_mhz = 240;
+    power.max_freq_mhz = 240;
+    power.light_sleep_enable = false;
+    esp_pm_configure(&power);
 
     initialise_wifi();
 
@@ -172,7 +170,7 @@ extern "C" void app_main()
     xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-    Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
+    // Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
 
     vTaskSuspend(NULL);
 }
