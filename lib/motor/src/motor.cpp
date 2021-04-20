@@ -82,7 +82,6 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t encoderA, gpio_num_t enc
     this->epsilonOld = 0;
     this->epsilonSuma = 0;
     this->derivativeError = 0;
-    this->previousTime = 0;
 }
 
 
@@ -108,14 +107,13 @@ inline void motor::softStop() {
 
 
 
-inline void motor::power(const uint32_t &pow) {
-    if(pow > MAX_POWER) ledc_set_duty(this->ledc_channel.speed_mode, this->ledc_channel.channel, MAX_POWER);
-    else ledc_set_duty(this->ledc_channel.speed_mode, this->ledc_channel.channel, pow);
+inline void motor::power(const uint16_t &pow) {
+    ledc_set_duty(this->ledc_channel.speed_mode, this->ledc_channel.channel, pow);
     ledc_update_duty(this->ledc_channel.speed_mode, this->ledc_channel.channel);
 }
 
 
-void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
+void motor::compute(const int &setpoint) {
     int16_t input;
     pcnt_get_counter_value(this->encoder, &input);
     pcnt_counter_clear(this->encoder);
@@ -128,9 +126,9 @@ void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
     else if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
     this->derivativeError = epsilon - epsilonOld;
 
-    this->kp = 20;
-    this->ki = 0;
-    this->kd = 0;
+    this->kp = 40;
+    this->ki = 6;
+    this->kd = 2;
 
     int p = kp*epsilon;
     int i = ki*this->integralError;
@@ -140,35 +138,17 @@ void motor::compute(uint32_t &pow, int8_t &direction, const int &setpoint) {
     int32_t pid = p + i + d;
     
 
-    pow = abs(pid); 
-    if(pid > 0) direction = 1;
-    else if(pid < 0) direction = -1;
-    else direction = 0;
-    epsilonOld = epsilon;
+    uint16_t pow = abs(pid); 
+    if(pow > MAX_POWER) pow = MAX_POWER;
+    if(pid > 0) this->direction(Direction::FORWARD);
+    else if(pid < 0) this->direction(Direction::BACKWARD);
+    else this->softStop();
 
-    printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d, dir: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow, direction);
-}
-
-void motor::drive(const int &setpoint) {
-    int8_t dir;
-    uint32_t pow;
-    this->compute(pow, dir, setpoint);
     this->power(pow);
 
-    if(dir > 0) {
-        dir = 1; 
-        this->direction(Direction::FORWARD);
-    }
-    else if(dir < 0) {
-        dir = -1;
-        this->direction(Direction::BACKWARD);
-    }
+    epsilonOld = epsilon;
 
-    if(setpoint == 0) {
-        this->softStop();
-        dir = 0;
-    }
-
-    // printf("Setpoint: %+4d, Power: %d%%, Direction: %d\n", setpoint, (pow*100)/MAX_POWER, dir);
+    printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow);
 }
+
 

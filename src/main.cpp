@@ -170,7 +170,7 @@ extern "C" void app_main()
     xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
     // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-    // Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
+    // Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM); //psuje PIDa :(
 
     vTaskSuspend(NULL);
 }
