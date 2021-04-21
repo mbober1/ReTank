@@ -147,7 +147,7 @@ void motor::compute(const int &setpoint) {
 
     epsilonOld = epsilon;
 
-    printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow);
+    // printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow);
 
     // input = abs(input) * speedVar;
     // xQueueSendToBack(speedQueue, &input, 0);

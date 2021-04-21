@@ -30,7 +30,7 @@ static int TCP_PORT = 8091;
 //motors config
 const gpio_num_t ENC1A = GPIO_NUM_32; //nie chce 35-39
 const gpio_num_t ENC1B = GPIO_NUM_33;
-const gpio_num_t ENC2A = GPIO_NUM_15;
+const gpio_num_t ENC2A = GPIO_NUM_16;
 const gpio_num_t ENC2B = GPIO_NUM_34;
 
 const gpio_num_t PWM1 = GPIO_NUM_12;
@@ -98,7 +98,7 @@ static void robotDriver(void*) {
         // pcnt_get_counter_value(PCNT1, input);
         // pcnt_get_counter_value(PCNT2, input+1);
         // printf("PCNT1: %d, PCNT2: %d\n", input[0], input[1]);
-        // vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
         // currentTime = esp_timer_get_time();
     }
     vTaskDelete(NULL);
