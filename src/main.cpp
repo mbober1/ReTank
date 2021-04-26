@@ -46,24 +46,25 @@ const ledc_channel_t MOTOR_PWM = LEDC_CHANNEL_0;
 //ultrasonic sensor config
 const gpio_num_t TRIG = GPIO_NUM_4;
 const gpio_num_t ECHO = GPIO_NUM_2;
-const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_1;
+const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_6;
 
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
 
-// static void batteryTask(void*) {
-//     myADC battery;
+static void batteryTask(void*) {
+    myADC battery;
 
-//     while (1)
-//     {
-//         int percentage = battery.getVoltage() * 25;
-//         // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
-//         xQueueSendToBack(batteryQueue, &percentage, 0);
-//         vTaskDelay(pdMS_TO_TICKS(1000));
-//     }
-//     vTaskDelete(NULL);
-// }
+    while (1)
+    {
+        int percentage = 100;
+        // int percentage = battery.getVoltage() * 25;
+        // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
+        xQueueSendToBack(batteryQueue, &percentage, 0);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelete(NULL);
+}
 
 
 
@@ -168,9 +169,9 @@ extern "C" void app_main()
     xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 5, NULL);
     xTaskCreate(tcpServerTask, "tcp_server", 14096, (void*)TCP_PORT, 4, NULL);
     xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
-    // xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
     // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-    // Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM); //psuje PIDa :(
+    Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM); //psuje PIDa :(
 
     vTaskSuspend(NULL);
 }

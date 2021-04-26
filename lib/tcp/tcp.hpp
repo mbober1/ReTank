@@ -113,12 +113,12 @@ void clientRX(const int &sock) {
         else {
 
             std::string data(rx_buffer, len);
-            printf("%s Received %d bytes: %s\n", TAG, len, data.c_str());
+            // printf("%s Received %d bytes: %s\n", TAG, len, data.c_str());
 
 
-            printf("TCP | Dostalem: %s\n", data.c_str());
+            // printf("TCP | Dostalem: %s\n", data.c_str());
             int separator = data.find(';');
-            printf("Znalazłem separator na miejscu: %d\n", separator);
+            // printf("Znalazłem separator na miejscu: %d\n", separator);
             
             while(separator != std::string::npos) {
                 std::string parse = data.substr(0, separator);
@@ -130,7 +130,7 @@ void clientRX(const int &sock) {
                     switch (packet->getType())
                     {
                     case 'P': {
-                        printf("PING!\n");
+                        // printf("PING!\n");
                         std::string data = PingPacket().prepare();
                         send((int)sock, data.c_str(), data.size(), 0);
                         break;
@@ -143,9 +143,9 @@ void clientRX(const int &sock) {
                     delete packet;
                 }
                 separator = data.find(';');
-                printf("Znalazłem separator na miejscu: %d\n", separator);
+                // printf("Znalazłem separator na miejscu: %d\n", separator);
             }
-            printf("Koniec wiadomości\n\n");
+            // printf("Koniec wiadomości\n\n");
         }
     } while (len > 0);
     printf("TCP RX delete\n");
