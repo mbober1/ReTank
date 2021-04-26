@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "esp_pm.h"
 
+// module includes
 #include <udp.hpp>
 #include <tcp.hpp>
 #include <wifi.hpp>
@@ -14,18 +15,18 @@
 #include <I2Cbus.hpp>
 #include <MPU.hpp>
 #include "mpu/math.hpp"
-#include "mpu/types.hpp"
 #include <adc.hpp>
 #include <ultrasonic.hpp>
 
+// watchdog includes
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 
-//UDP/TCP config
+// UDP/TCP config
 static int UDP_PORT = 8090;
 static int TCP_PORT = 8091;
 
-//motors config
+// motors config
 const gpio_num_t ENC1A = GPIO_NUM_32;
 const gpio_num_t ENC1B = GPIO_NUM_33;
 const gpio_num_t ENC2A = GPIO_NUM_16;
@@ -41,15 +42,17 @@ const pcnt_unit_t PCNT1 = PCNT_UNIT_0;
 const pcnt_unit_t PCNT2 = PCNT_UNIT_1;
 const ledc_channel_t MOTOR_PWM = LEDC_CHANNEL_0;
 
-//ultrasonic sensor config
+// ultrasonic sensor config
 const gpio_num_t TRIG = GPIO_NUM_4;
 const gpio_num_t ECHO = GPIO_NUM_2;
 const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_6;
 
-//i2c config
+// i2c config
 const gpio_num_t SDA = GPIO_NUM_21;
 const gpio_num_t SCL = GPIO_NUM_22;
 const uint32_t CLOCK = 100000U;
+
+// queues init
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
@@ -88,8 +91,6 @@ static void robotDriver(void*) {
 
     Robot robot(config);
     EnginePacket packet;
-    // int64_t currentTime = 0;
-    // int16_t input[2];
     
     while (1) {
         xQueueReceive(engineQueue, &packet, 0);
@@ -98,11 +99,7 @@ static void robotDriver(void*) {
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
         TIMERG0.wdt_feed=1;
         TIMERG0.wdt_wprotect=0;
-        // pcnt_get_counter_value(PCNT1, input);
-        // pcnt_get_counter_value(PCNT2, input+1);
-        // printf("PCNT1: %d, PCNT2: %d\n", input[0], input[1]);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        // currentTime = esp_timer_get_time();
     }
     vTaskDelete(NULL);
 }
@@ -137,13 +134,11 @@ static void mpuTask(void*) {
         // printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
         // printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
 
-
         AcceloPacket packetA(accelG[0], accelG[1], accelG[2]);
         xQueueSendToBack(accelQueue, &packetA, 0);
 
         GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
         xQueueSendToBack(gyroQueue, &packetG, 0);
-
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
