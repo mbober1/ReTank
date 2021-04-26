@@ -1,6 +1,16 @@
 #include "motor.hpp"
 
 
+/**
+ * Constructor.
+ * @param in1 input1 GPIO pin.
+ * @param in2 input2 GPIO pin.
+ * @param encoderA encoder first GPIO pin.
+ * @param encoderB encoder second GPIO pin.
+ * @param pwmPin enable GPIO pin.
+ * @param pwmChannel PWM channel.
+ * @param pcntUnit PCNT unit.
+ */
 motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t encoderA, gpio_num_t encoderB, gpio_num_t pwmPin, ledc_channel_t pwmChannel, pcnt_unit_t pcntUnit) : in1(in1), in2(in2), pwmPin(pwmPin) {
     esp_err_t err;
 
@@ -84,7 +94,10 @@ motor::motor(gpio_num_t in1, gpio_num_t in2, gpio_num_t encoderA, gpio_num_t enc
     this->derivativeError = 0;
 }
 
-
+/**
+ * Set motor direction.
+ * @param dir direction
+ */
 inline void motor::direction(const Direction &dir) {
     if(static_cast<uint8_t>(dir)) {
         gpio_set_level(this->in1, 1);
@@ -95,24 +108,35 @@ inline void motor::direction(const Direction &dir) {
     }
 }
 
+/**
+ * Set fast stop mode.
+ */
 inline void motor::fastStop() {
     gpio_set_level(this->in1, 1);
     gpio_set_level(this->in2, 1);
 }
 
+/**
+ * Set soft stop mode.
+ */
 inline void motor::softStop() {
     gpio_set_level(this->in1, 0);
     gpio_set_level(this->in2, 0);
 }
 
-
-
+/**
+ * Set motor power.
+ * @param power Motor power [0, (2**duty_resolution)]
+ */
 inline void motor::power(const uint16_t &pow) {
     ledc_set_duty(this->ledc_channel.speed_mode, this->ledc_channel.channel, pow);
     ledc_update_duty(this->ledc_channel.speed_mode, this->ledc_channel.channel);
 }
 
-
+/**
+ * Compute PID.
+ * @param setpoint Setpoint
+ */
 void motor::compute(const int &setpoint) {
     int16_t input;
     pcnt_get_counter_value(this->encoder, &input);
