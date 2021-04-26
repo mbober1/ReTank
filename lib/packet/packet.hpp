@@ -2,6 +2,10 @@
 #include <string>
 #include "crc.h"
 
+
+/**
+    @brief Generic packet class
+*/
 class Packet {
 public:
     Packet();
@@ -14,7 +18,9 @@ public:
 };
 
 
-
+/**
+    @brief Ping request class
+*/
 class PingPacket : public Packet {
 public:
     PingPacket();
@@ -24,7 +30,9 @@ public:
 };
 
 
-
+/**
+    @brief Engine power management class
+*/
 class EnginePacket : public Packet {
 public:
     EnginePacket(const std::string &data);
@@ -38,7 +46,9 @@ public:
 };
 
 
-
+/**
+    @brief Battery power management class
+*/
 class BatteryPacket : public Packet {
 public:
     BatteryPacket(const std::string &data);
@@ -50,7 +60,9 @@ public:
 };
 
 
-
+/**
+    @brief Obstalce distance management class
+*/
 class DistancePacket : public Packet {
 public:
     DistancePacket(const std::string &data);
@@ -62,7 +74,9 @@ public:
 };
 
 
-
+/**
+    @brief Engine speed management class
+*/
 class SpeedPacket : public Packet {
 public:
     SpeedPacket(const std::string &data);
@@ -75,7 +89,9 @@ public:
 };
 
 
-
+/**
+    @brief Connection status management class
+*/
 class ClosePacket : public Packet {
 public:
     ClosePacket();
@@ -85,7 +101,9 @@ public:
 };
 
 
-
+/**
+    @brief Accelometer data management class
+*/
 class AcceloPacket : public Packet {
 public:
     AcceloPacket(std::string data);
@@ -98,7 +116,9 @@ public:
 };
 
 
-
+/**
+    @brief Gyroscop data management class
+*/
 class GyroPacket : public Packet {
 public:
     GyroPacket(std::string data);
