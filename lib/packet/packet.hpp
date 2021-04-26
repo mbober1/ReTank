@@ -90,6 +90,7 @@ class AcceloPacket : public Packet {
 public:
     AcceloPacket(std::string data);
     AcceloPacket(const int8_t &x, const int8_t &y, const int8_t &z);
+    AcceloPacket();
     ~AcceloPacket();
     virtual std::string prepare();
     int8_t x, y, z;
@@ -102,6 +103,7 @@ class GyroPacket : public Packet {
 public:
     GyroPacket(std::string data);
     GyroPacket(const int8_t &x, const int8_t &y, const int8_t &z);
+    GyroPacket();
     ~GyroPacket();
     virtual std::string prepare();
     int8_t x, y, z;

@@ -6,6 +6,8 @@
 
 
 extern QueueHandle_t engineQueue;
+extern QueueHandle_t accelQueue;
+extern QueueHandle_t gyroQueue;
 
 static void udpServerTask(void *port) {
     static const char *TAG = "UDP";
@@ -34,7 +36,7 @@ static void udpServerTask(void *port) {
 
         ESP_LOGI(TAG, "Socket bound, port %d", (int)port);
         int len;
-
+        // xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)listen_sock, 5, NULL);
 
         while (1) {
             len = recv(listen_sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
@@ -82,5 +84,25 @@ static void udpServerTask(void *port) {
             close(listen_sock);
         }
     }
+    vTaskDelete(NULL);
+}
+
+
+void udpClientTX(const int &sock) {
+    AcceloPacket accel;
+    GyroPacket gyro;
+
+    while (true) {
+        if(xQueueReceive(accelQueue, &accel, 0) == pdTRUE) {
+                std::string data = accel.prepare();
+                send((int)sock, data.c_str(), data.size(), 0);
+        }
+
+        if(xQueueReceive(gyroQueue, &gyro, 0) == pdTRUE) {
+                std::string data = gyro.prepare();
+                send((int)sock, data.c_str(), data.size(), 0);
+        }
+    }
+    
     vTaskDelete(NULL);
 }

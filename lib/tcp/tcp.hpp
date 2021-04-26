@@ -169,7 +169,6 @@ void clientTX(void* sock) { //sending
             }
 
             if(xQueueReceive(distanceQueue, &distance, 0) == pdTRUE) {
-                // printf("Distance: %d\n", distance);
                 std::string data = DistancePacket(distance).prepare();
                 send((int)sock, data.c_str(), data.size(), 0);
             }
