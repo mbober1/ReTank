@@ -123,7 +123,7 @@ void clientRX(const int &sock) {
             while(separator != std::string::npos) {
                 std::string parse = data.substr(0, separator);
                 data.erase(0, separator + 1);
-                printf("Nowy string: %s\n", parse.c_str());
+                // printf("Nowy string: %s\n", parse.c_str());
                 
                 Packet* packet = Packet::decode(parse);
                 if (packet != nullptr) {
