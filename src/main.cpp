@@ -12,11 +12,9 @@
 #include <wifi.hpp>
 #include <robot.hpp>
 #include <I2Cbus.hpp>
-// #include <MPU.hpp>
-// #include "esp_log.h"
-// #include "esp_err.h"
-// #include "mpu/math.hpp"
-// #include "mpu/types.hpp"
+#include <MPU.hpp>
+#include "mpu/math.hpp"
+#include "mpu/types.hpp"
 #include <adc.hpp>
 #include <ultrasonic.hpp>
 
@@ -28,7 +26,7 @@ static int UDP_PORT = 8090;
 static int TCP_PORT = 8091;
 
 //motors config
-const gpio_num_t ENC1A = GPIO_NUM_32; //nie chce 35-39
+const gpio_num_t ENC1A = GPIO_NUM_32;
 const gpio_num_t ENC1B = GPIO_NUM_33;
 const gpio_num_t ENC2A = GPIO_NUM_16;
 const gpio_num_t ENC2B = GPIO_NUM_34;
@@ -48,6 +46,10 @@ const gpio_num_t TRIG = GPIO_NUM_4;
 const gpio_num_t ECHO = GPIO_NUM_2;
 const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_6;
 
+//i2c config
+const gpio_num_t SDA = GPIO_NUM_21;
+const gpio_num_t SCL = GPIO_NUM_22;
+const uint32_t CLOCK = 100000U;
 QueueHandle_t engineQueue, batteryQueue, distanceQueue;
 QueueHandle_t accelQueue, gyroQueue, speedQueue;
 
@@ -105,48 +107,48 @@ static void robotDriver(void*) {
     vTaskDelete(NULL);
 }
 
-// static void mpuTask(void*) {
-//     MPU_t MPU;
-//     int err = 1;
-//     MPU.setBus(i2c0);
-//     MPU.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
+static void mpuTask(void*) {
+    i2c0.begin(SDA, SCL, CLOCK);
+    MPU_t MPU;
+    MPU.setBus(i2c0);
+    MPU.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
 
-//     ESP_ERROR_CHECK(MPU.testConnection());
-//     ESP_ERROR_CHECK(MPU.initialize());
+    ESP_ERROR_CHECK(MPU.testConnection());
+    ESP_ERROR_CHECK(MPU.initialize());
 
-//     MPU.setSampleRate(250);  // in (Hz)
-//     MPU.setAccelFullScale(mpud::ACCEL_FS_4G);
-//     MPU.setGyroFullScale(mpud::GYRO_FS_500DPS);
-//     MPU.setDigitalLowPassFilter(mpud::DLPF_42HZ);  // smoother data
-//     MPU.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);  // enable INT pin
-
-
-//     while (!err) {
-//         mpud::raw_axes_t accelRaw;     // holds x, y, z axes as int16
-//         mpud::raw_axes_t gyroRaw;      // holds x, y, z axes as int16
-//         MPU.acceleration(&accelRaw);  // fetch raw data from the registers
-//         MPU.rotation(&gyroRaw);       // fetch raw data from the registers
-//         printf("accel: %+d %+d %+d\n", accelRaw.x, accelRaw.y, accelRaw.z);
-//         printf("gyro: %+d %+d %+d\n", gyroRaw[0], gyroRaw[1], gyroRaw[2]);
+    // MPU.setSampleRate(250);  // in (Hz)
+    MPU.setAccelFullScale(mpud::ACCEL_FS_4G);
+    MPU.setGyroFullScale(mpud::GYRO_FS_500DPS);
+    MPU.setDigitalLowPassFilter(mpud::DLPF_42HZ);  // smoother data
+    MPU.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);  // enable INT pin
 
 
-//         mpud::float_axes_t accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);  // raw data to gravity
-//         mpud::float_axes_t gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);  // raw data to º/s
-//         printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
-//         printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
+    while (1) {
+        mpud::raw_axes_t accelRaw;     // holds x, y, z axes as int16
+        mpud::raw_axes_t gyroRaw;      // holds x, y, z axes as int16
+        MPU.acceleration(&accelRaw);  // fetch raw data from the registers
+        MPU.rotation(&gyroRaw);       // fetch raw data from the registers
+        // printf("accel: %+d %+d %+d\n", accelRaw.x, accelRaw.y, accelRaw.z);
+        // printf("gyro: %+d %+d %+d\n", gyroRaw[0], gyroRaw[1], gyroRaw[2]);
 
 
-//         AcceloPacket packetA(accelG[0], accelG[1], accelG[2]);
-//         xQueueSendToBack(accelQueue, &packetA, 0);
+        mpud::float_axes_t accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);  // raw data to gravity
+        mpud::float_axes_t gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);  // raw data to º/s
+        // printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
+        // printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
 
-//         GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
-//         xQueueSendToBack(gyroQueue, &packetG, 0);
+
+        AcceloPacket packetA(accelG[0], accelG[1], accelG[2]);
+        xQueueSendToBack(accelQueue, &packetA, 0);
+
+        GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
+        xQueueSendToBack(gyroQueue, &packetG, 0);
 
 
-//         vTaskDelay(pdMS_TO_TICKS(1000));
-//     }
-//     vTaskDelete(NULL);
-// }
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    vTaskDelete(NULL);
+}
 
 extern "C" void app_main()
 {
@@ -166,12 +168,12 @@ extern "C" void app_main()
     speedQueue = xQueueCreate(5, sizeof(int16_t));
 
 
-    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 5, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 14096, (void*)TCP_PORT, 4, NULL);
+    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 10, NULL);
+    xTaskCreate(tcpServerTask, "tcp_server", 14096, (void*)TCP_PORT, 8, NULL);
     xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
-    xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    // xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
-    Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM); //psuje PIDa :(
+    xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, NULL);
+    xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
+    Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
 
     vTaskSuspend(NULL);
 }
