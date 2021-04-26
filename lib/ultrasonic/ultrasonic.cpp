@@ -31,17 +31,17 @@ Ultrasonic::Ultrasonic(gpio_num_t triggerPin, gpio_num_t echoPin, ledc_channel_t
 
     ledc_timer.duty_resolution = LEDC_TIMER_15_BIT;
     ledc_timer.freq_hz = 5;
-    ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
-    ledc_timer.timer_num = LEDC_TIMER_0;
+    ledc_timer.speed_mode = LEDC_LOW_SPEED_MODE;
+    ledc_timer.timer_num = LEDC_TIMER_3;
     ledc_timer.clk_cfg = LEDC_AUTO_CLK;
     err += ledc_timer_config(&ledc_timer);
 
     ledc_channel.channel = pwmChannel;
     ledc_channel.duty = 2;
     ledc_channel.gpio_num = this->triggerPin;
-    ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
+    ledc_channel.speed_mode = LEDC_LOW_SPEED_MODE;
     ledc_channel.hpoint     = 0;
-    ledc_channel.timer_sel  = LEDC_TIMER_0;
+    ledc_channel.timer_sel  = LEDC_TIMER_3;
     
     err += ledc_channel_config(&ledc_channel);
 
