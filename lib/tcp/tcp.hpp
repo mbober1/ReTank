@@ -18,7 +18,7 @@ extern QueueHandle_t gyroQueue;
 
 static void RXtcp(const int &sock);
 static void TXtcp(void *);
-static void TXudp(void *);
+// static void TXudp(void *);
 static void RXudp(void *);
 
 
@@ -78,6 +78,8 @@ static void RXtcp(const int &sock) {
 static void TXtcp(void* sock) { //sending
     int battery, distance;
     uint16_t speed;
+    AcceloPacket accel;
+    GyroPacket gyro;
     printf("TCP TX init | Socket: %d\n", (int)sock);
 
     while(true) {
@@ -95,33 +97,38 @@ static void TXtcp(void* sock) { //sending
             std::string data = DistancePacket(distance).prepare();
             send((int)sock, data.c_str(), data.size(), 0);
         }
-    }
 
-    vTaskDelete(NULL);
-}
-
-
-static void TXudp(void *sock) {
-    AcceloPacket accel;
-    GyroPacket gyro;
-    printf("UDP TX init | Socket: %d\n", (int)sock);
-
-    while (true) {
         if(xQueueReceive(accelQueue, &accel, portMAX_DELAY) == pdTRUE) {
-            printf("accel\n");
             std::string data = accel.prepare();
             send((int)sock, data.c_str(), data.size(), 0);
         }
-
-        // if(xQueueReceive(gyroQueue, &gyro, 0) == pdTRUE) {
-        //     std::string data = gyro.prepare();
-        //     // send((int)sock, data.c_str(), data.size(), 0);
-        // }
-        // vTaskDelay(pdMS_TO_TICKS(100));
     }
-    
+
     vTaskDelete(NULL);
 }
+
+
+// static void TXudp(void *sock) {
+//     AcceloPacket accel;
+//     GyroPacket gyro;
+//     printf("UDP TX init | Socket: %d\n", (int)sock);
+
+//     while (true) {
+//         if(xQueueReceive(accelQueue, &accel, portMAX_DELAY) == pdTRUE) {
+//             printf("accel\n");
+//             std::string data = accel.prepare();
+//             send((int)sock, data.c_str(), data.size(), 0);
+//         }
+
+//         // if(xQueueReceive(gyroQueue, &gyro, 0) == pdTRUE) {
+//         //     std::string data = gyro.prepare();
+//         //     // send((int)sock, data.c_str(), data.size(), 0);
+//         // }
+//         // vTaskDelay(pdMS_TO_TICKS(100));
+//     }
+    
+//     vTaskDelete(NULL);
+// }
 
 
 
@@ -153,7 +160,7 @@ static void RXudp(void *port) {
         ESP_LOGI(TAG, "Socket %d bound, port %d", listen_sock, (int)port);
         int len;
         // xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)listen_sock, 5, NULL);
-        xTaskCreate(TXudp, "udp_server_tx", 4096, (void*)listen_sock, 5, NULL);
+        // xTaskCreate(TXudp, "udp_server_tx", 4096, (void*)listen_sock, 5, NULL);
 
         while (1) {
             len = recv(listen_sock, rx_buffer, sizeof(rx_buffer) - 1, 0);

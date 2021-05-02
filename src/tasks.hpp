@@ -87,7 +87,7 @@ void mpuTask(void*) {
         // printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
         // printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
 
-        AcceloPacket packetA(accelG[0], accelG[1], accelG[2]);
+        AcceloPacket packetA(accelG[0] * 100, accelG[1] * 100, accelG[2] * 100);
         xQueueSendToBack(accelQueue, &packetA, 0);
 
         // GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
