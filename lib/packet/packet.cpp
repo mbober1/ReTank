@@ -324,6 +324,12 @@ GyroPacket::GyroPacket(const int8_t &x, const int8_t &y, const int8_t &z) : x(x)
 
 
 /**
+ * A constructor.
+ */
+GyroPacket::GyroPacket() {}
+
+
+/**
  * A destructor.
  */
 GyroPacket::~GyroPacket() {}
@@ -390,6 +396,12 @@ std::string GyroPacket::prepare() {
  * @param z accelerometer data of Z axis.
  */
 AcceloPacket::AcceloPacket(const int8_t &x, const int8_t &y, const int8_t &z) : x(x), y(y), z(z) {}
+
+
+/**
+ * A constructor.
+ */
+AcceloPacket::AcceloPacket() {}
 
 
 /**

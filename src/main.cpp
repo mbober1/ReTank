@@ -86,24 +86,27 @@ extern "C" void app_main()
 
             printf("%s | Socket %d accepted ip address: %s\n", TAG, sock, clientAddress);
 
-            TaskHandle_t tx = NULL;
-            TaskHandle_t udp = NULL;
+            TaskHandle_t txtcp = NULL;
+            TaskHandle_t rxudp = NULL;
+            TaskHandle_t txudp = NULL;
             TaskHandle_t driver = NULL;
             TaskHandle_t battery = NULL;
             TaskHandle_t mpu = NULL;
 
-            xTaskCreate(clientTXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
-            xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 10, &udp);
+            xTaskCreate(TXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &txtcp);
+            // xTaskCreate(TXudp, "udp_server_tx", 4096, (void*)sock, 5, &txudp);
+            xTaskCreate(RXudp, "udp_server_rx", 4096, (void*)UDP_PORT, 10, &rxudp);
             xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, &driver);
             xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, &battery);
             xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, &mpu);
 
             printf("dddd\r\n");
-            clientRXtcp(sock); //wait until client connected
+            RXtcp(sock); //wait until client connected
 
             printf("TCP TX kill task \n");
-            vTaskDelete(&tx);
-            vTaskDelete(&udp);
+            vTaskDelete(&txtcp);
+            vTaskDelete(&txudp);
+            vTaskDelete(&rxudp);
             vTaskDelete(&driver);
             vTaskDelete(&battery);
             vTaskDelete(&mpu);

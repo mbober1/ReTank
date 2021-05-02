@@ -55,6 +55,8 @@ void robotDriver(void*) {
     vTaskDelete(NULL);
 }
 
+
+
 void mpuTask(void*) {
     i2c0.begin(SDA, SCL, CLOCK);
     MPU_t MPU;
@@ -88,8 +90,8 @@ void mpuTask(void*) {
         AcceloPacket packetA(accelG[0], accelG[1], accelG[2]);
         xQueueSendToBack(accelQueue, &packetA, 0);
 
-        GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
-        xQueueSendToBack(gyroQueue, &packetG, 0);
+        // GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
+        // xQueueSendToBack(gyroQueue, &packetG, 0);
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
