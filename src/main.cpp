@@ -1,149 +1,6 @@
-#define INCLUDE_vTaskSuspend 1
-
-#include <string>
-#include <stdio.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_pm.h"
-
-// module includes
-#include <udp.hpp>
-#include <tcp.hpp>
-#include <wifi.hpp>
-#include <robot.hpp>
-#include <I2Cbus.hpp>
-#include <MPU.hpp>
-#include "mpu/math.hpp"
-#include <adc.hpp>
-#include <ultrasonic.hpp>
-
-// watchdog includes
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
-
-// UDP/TCP config
-static int UDP_PORT = 8090;
-static int TCP_PORT = 8091;
-
-// motors config
-const gpio_num_t ENC1A = GPIO_NUM_32;
-const gpio_num_t ENC1B = GPIO_NUM_33;
-const gpio_num_t ENC2A = GPIO_NUM_16;
-const gpio_num_t ENC2B = GPIO_NUM_34;
-
-const gpio_num_t PWM1 = GPIO_NUM_12;
-const gpio_num_t PWM2 = GPIO_NUM_26;
-const gpio_num_t IN1 = GPIO_NUM_13;
-const gpio_num_t IN2 = GPIO_NUM_14;
-const gpio_num_t IN3 = GPIO_NUM_27;
-const gpio_num_t IN4 = GPIO_NUM_25;
-const pcnt_unit_t PCNT1 = PCNT_UNIT_0;
-const pcnt_unit_t PCNT2 = PCNT_UNIT_1;
-const ledc_channel_t MOTOR_PWM = LEDC_CHANNEL_0;
-
-// ultrasonic sensor config
-const gpio_num_t TRIG = GPIO_NUM_4;
-const gpio_num_t ECHO = GPIO_NUM_2;
-const ledc_channel_t SENSOR_PWM = LEDC_CHANNEL_6;
-
-// i2c config
-const gpio_num_t SDA = GPIO_NUM_21;
-const gpio_num_t SCL = GPIO_NUM_22;
-const uint32_t CLOCK = 100000U;
-
-// queues init
-QueueHandle_t engineQueue, batteryQueue, distanceQueue;
-QueueHandle_t accelQueue, gyroQueue, speedQueue;
+#include "tasks.hpp"
 
 
-static void batteryTask(void*) {
-    myADC battery;
-
-    while (1)
-    {
-        int percentage = 100;
-        // int percentage = battery.getVoltage() * 25;
-        // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
-        xQueueSendToBack(batteryQueue, &percentage, 0);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    vTaskDelete(NULL);
-}
-
-
-
-static void robotDriver(void*) {
-    RobotConfig config = {};
-    config.in1 = IN1;
-    config.in2 = IN2;
-    config.in3 = IN3;
-    config.in4 = IN4;
-    config.pwm1 = PWM1;
-    config.pwm2 = PWM2;
-    config.enc1a = ENC1A;
-    config.enc1b = ENC1B;
-    config.enc2a = ENC2A;
-    config.enc2b = ENC2B;
-    config.pcntUnit1 = PCNT1;
-    config.pcntUnit2 = PCNT2;
-    config.pwmChannel = MOTOR_PWM;
-
-    Robot robot(config);
-    EnginePacket packet;
-    
-    while (1) {
-        xQueueReceive(engineQueue, &packet, 0);
-        robot.drive(packet);
-
-        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-        TIMERG0.wdt_feed=1;
-        TIMERG0.wdt_wprotect=0;
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
-    vTaskDelete(NULL);
-}
-
-static void mpuTask(void*) {
-    i2c0.begin(SDA, SCL, CLOCK);
-    MPU_t MPU;
-    MPU.setBus(i2c0);
-    MPU.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
-
-    ESP_ERROR_CHECK(MPU.testConnection());
-    ESP_ERROR_CHECK(MPU.initialize());
-
-    // MPU.setSampleRate(250);  // in (Hz)
-    MPU.setAccelFullScale(mpud::ACCEL_FS_4G);
-    MPU.setGyroFullScale(mpud::GYRO_FS_500DPS);
-    MPU.setDigitalLowPassFilter(mpud::DLPF_42HZ);  // smoother data
-    MPU.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);  // enable INT pin
-
-
-    while (1) {
-        mpud::raw_axes_t accelRaw;     // holds x, y, z axes as int16
-        mpud::raw_axes_t gyroRaw;      // holds x, y, z axes as int16
-        MPU.acceleration(&accelRaw);  // fetch raw data from the registers
-        MPU.rotation(&gyroRaw);       // fetch raw data from the registers
-        // printf("accel: %+d %+d %+d\n", accelRaw.x, accelRaw.y, accelRaw.z);
-        // printf("gyro: %+d %+d %+d\n", gyroRaw[0], gyroRaw[1], gyroRaw[2]);
-
-
-        mpud::float_axes_t accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);  // raw data to gravity
-        mpud::float_axes_t gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);  // raw data to º/s
-        // printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
-        // printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
-
-        AcceloPacket packetA(accelG[0], accelG[1], accelG[2]);
-        xQueueSendToBack(accelQueue, &packetA, 0);
-
-        GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
-        xQueueSendToBack(gyroQueue, &packetG, 0);
-
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-    vTaskDelete(NULL);
-}
 
 extern "C" void app_main()
 {
@@ -162,13 +19,99 @@ extern "C" void app_main()
     distanceQueue = xQueueCreate(5, sizeof(int));
     speedQueue = xQueueCreate(5, sizeof(int16_t));
 
-
-    xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 10, NULL);
-    xTaskCreate(tcpServerTask, "tcp_server", 14096, (void*)TCP_PORT, 8, NULL);
-    xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
-    xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, NULL);
-    xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
+    
     Ultrasonic sensor(TRIG, ECHO, SENSOR_PWM);
 
-    vTaskSuspend(NULL);
+
+
+    static const char *TAG = "TCP";
+    
+    struct sockaddr_storage dest_addr;
+    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
+    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+    dest_addr_ip4->sin_family = AF_INET;
+    dest_addr_ip4->sin_port = htons((int)TCP_PORT);
+
+    int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+
+    if (listen_sock < 0) {
+        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    int opt = 1;
+    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    ESP_LOGI(TAG, "Socket created");
+
+    int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    if(err) {
+        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+        ESP_LOGE(TAG, "IPPROTO: %d", AF_INET);
+    } else {
+        err = listen(listen_sock, 1);
+    }
+
+    if(!err) {
+        ESP_LOGI(TAG, "Socket bound, port %d", (int)TCP_PORT);
+
+        while (1) {
+            ESP_LOGI(TAG, "Socket listening");
+
+            struct sockaddr_storage source_addr;
+            socklen_t addr_len = sizeof(source_addr);
+            int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
+            if (sock < 0) {
+                ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
+                break;
+            }
+
+            // Set tcp keepalive option
+            int keepAlive = 1;
+            int keepIdle = KEEPALIVE_IDLE;
+            int keepInterval = KEEPALIVE_INTERVAL;
+            int keepCount = KEEPALIVE_COUNT;
+            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
+            setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
+            setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
+            setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
+
+
+            // Convert ip address to string
+            char clientAddress[128];
+            if (source_addr.ss_family == PF_INET) {
+                inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, clientAddress, sizeof(clientAddress) - 1);
+            }
+
+            printf("%s | Socket %d accepted ip address: %s\n", TAG, sock, clientAddress);
+
+            TaskHandle_t tx = NULL;
+            TaskHandle_t udp = NULL;
+            TaskHandle_t driver = NULL;
+            TaskHandle_t battery = NULL;
+            TaskHandle_t mpu = NULL;
+
+            xTaskCreate(clientTXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
+            xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 10, &udp);
+            xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, &driver);
+            xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, &battery);
+            xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, &mpu);
+
+            printf("dddd\r\n");
+            clientRXtcp(sock); //wait until client connected
+
+            printf("TCP TX kill task \n");
+            vTaskDelete(&tx);
+            vTaskDelete(&udp);
+            vTaskDelete(&driver);
+            vTaskDelete(&battery);
+            vTaskDelete(&mpu);
+            shutdown(sock, 0);
+            close(sock);
+        } 
+    } else ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
+
+    close(listen_sock);
+    // vTaskSuspend(NULL);
 }

@@ -16,88 +16,93 @@ extern QueueHandle_t speedQueue;
 void clientRXtcp(const int &sock);
 void clientTXtcp(void* sock);
 
-static void tcpServerTask(void* port);
+// static void tcpServerTask(void* port);
 
 
-void tcpServerTask(void* port) {
-    static const char *TAG = "TCP";
+// void tcpServerTask(void* port) {
+//     static const char *TAG = "TCP";
     
-    struct sockaddr_storage dest_addr;
-    struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-    dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr_ip4->sin_family = AF_INET;
-    dest_addr_ip4->sin_port = htons((int)port);
+//     struct sockaddr_storage dest_addr;
+//     struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
+//     dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+//     dest_addr_ip4->sin_family = AF_INET;
+//     dest_addr_ip4->sin_port = htons((int)port);
 
-    int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+//     int listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 
-    if (listen_sock < 0) {
-        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-        vTaskDelete(NULL);
-        return;
-    }
+//     if (listen_sock < 0) {
+//         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+//         vTaskDelete(NULL);
+//         return;
+//     }
 
-    int opt = 1;
-    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+//     int opt = 1;
+//     setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    ESP_LOGI(TAG, "Socket created");
+//     ESP_LOGI(TAG, "Socket created");
 
-    int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    if(err) {
-        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-        ESP_LOGE(TAG, "IPPROTO: %d", AF_INET);
-    } else {
-        err = listen(listen_sock, 1);
-    }
+//     int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+//     if(err) {
+//         ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+//         ESP_LOGE(TAG, "IPPROTO: %d", AF_INET);
+//     } else {
+//         err = listen(listen_sock, 1);
+//     }
 
-    if(!err) {
-        ESP_LOGI(TAG, "Socket bound, port %d", (int)port);
+//     if(!err) {
+//         ESP_LOGI(TAG, "Socket bound, port %d", (int)port);
 
-        while (1) {
-            ESP_LOGI(TAG, "Socket listening");
+//         while (1) {
+//             ESP_LOGI(TAG, "Socket listening");
 
-            struct sockaddr_storage source_addr;
-            socklen_t addr_len = sizeof(source_addr);
-            int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
-            if (sock < 0) {
-                ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
-                break;
-            }
+//             struct sockaddr_storage source_addr;
+//             socklen_t addr_len = sizeof(source_addr);
+//             int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
+//             if (sock < 0) {
+//                 ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
+//                 break;
+//             }
 
-            // Set tcp keepalive option
-            int keepAlive = 1;
-            int keepIdle = KEEPALIVE_IDLE;
-            int keepInterval = KEEPALIVE_INTERVAL;
-            int keepCount = KEEPALIVE_COUNT;
-            setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
-            setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
-            setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
-            setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
+//             // Set tcp keepalive option
+//             int keepAlive = 1;
+//             int keepIdle = KEEPALIVE_IDLE;
+//             int keepInterval = KEEPALIVE_INTERVAL;
+//             int keepCount = KEEPALIVE_COUNT;
+//             setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
+//             setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
+//             setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
+//             setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
 
 
-            // Convert ip address to string
-            char clientAddress[128];
-            if (source_addr.ss_family == PF_INET) {
-                inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, clientAddress, sizeof(clientAddress) - 1);
-            }
+//             // Convert ip address to string
+//             char clientAddress[128];
+//             if (source_addr.ss_family == PF_INET) {
+//                 inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, clientAddress, sizeof(clientAddress) - 1);
+//             }
 
-            printf("%s | Socket %d accepted ip address: %s\n", TAG, sock, clientAddress);
+//             printf("%s | Socket %d accepted ip address: %s\n", TAG, sock, clientAddress);
 
-            TaskHandle_t tx = NULL;
+//             TaskHandle_t tx = NULL;
 
-            xTaskCreate(clientTXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
-            printf("dddd\r\n");
-            clientRXtcp(sock); //wait until client connected
+//             xTaskCreate(clientTXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
+//             xTaskCreate(udpServerTask, "udp_server", 4096, (void*)UDP_PORT, 10, NULL);
+//             xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, NULL);
+//             xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, NULL);
+//             xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, NULL);
 
-            printf("TCP TX kill task \n");
-            vTaskDelete(&tx);
-            shutdown(sock, 0);
-            close(sock);
-        } 
-    } else ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
+//             printf("dddd\r\n");
+//             clientRXtcp(sock); //wait until client connected
 
-    close(listen_sock);
-    vTaskDelete(NULL);
-}
+//             printf("TCP TX kill task \n");
+//             vTaskDelete(&tx);
+//             shutdown(sock, 0);
+//             close(sock);
+//         } 
+//     } else ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
+
+//     close(listen_sock);
+//     vTaskDelete(NULL);
+// }
 
 void clientRXtcp(const int &sock) {
     printf("TCP RX init\n");

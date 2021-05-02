@@ -1,13 +1,15 @@
 #include "ultrasonic.hpp"
 
+static int distance;
+static unsigned long sensorTime;
 
 static void IRAM_ATTR triggerInterrupt(void* arg)
 {
     if(!gpio_get_level(GPIO_NUM_2)) {
-        distance = (esp_timer_get_time() - sensor1Time)/58;
+        distance = (esp_timer_get_time() - sensorTime)/58;
         xQueueSendToBack(distanceQueue, &distance, 0);
     }
-    else sensor1Time = esp_timer_get_time();
+    else sensorTime = esp_timer_get_time();
 }
 
 
