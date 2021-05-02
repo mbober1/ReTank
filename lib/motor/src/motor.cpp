@@ -138,6 +138,8 @@ inline void motor::power(const uint16_t &pow) {
  * @param setpoint Setpoint
  */
 void motor::compute(const int &setpoint) {
+    static uint16_t count;
+    count++;
     int16_t input;
     pcnt_get_counter_value(this->encoder, &input);
     pcnt_counter_clear(this->encoder);
@@ -173,8 +175,12 @@ void motor::compute(const int &setpoint) {
 
     // printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow);
 
-    // input = abs(input) * speedVar;
-    // xQueueSendToBack(speedQueue, &input, 0);
+    if(count >= 1000) {
+        count = 0;
+
+        input = abs(input) * speedVar;
+        xQueueSendToBack(speedQueue, &input, 0);
+    }
 }
 
 

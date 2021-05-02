@@ -13,8 +13,8 @@ extern QueueHandle_t batteryQueue;
 extern QueueHandle_t distanceQueue;
 extern QueueHandle_t speedQueue;
 
-void clientRX(const int &sock);
-void clientTX(void* sock);
+void clientRXtcp(const int &sock);
+void clientTXtcp(void* sock);
 
 static void tcpServerTask(void* port);
 
@@ -84,9 +84,9 @@ void tcpServerTask(void* port) {
 
             TaskHandle_t tx = NULL;
 
-            xTaskCreate(clientTX, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
+            xTaskCreate(clientTXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &tx);
             printf("dddd\r\n");
-            clientRX(sock); //wait until client connected
+            clientRXtcp(sock); //wait until client connected
 
             printf("TCP TX kill task \n");
             vTaskDelete(&tx);
@@ -99,7 +99,7 @@ void tcpServerTask(void* port) {
     vTaskDelete(NULL);
 }
 
-void clientRX(const int &sock) {
+void clientRXtcp(const int &sock) {
     printf("TCP RX init\n");
     static const char *TAG = "TCP RX";
     int len;
@@ -152,7 +152,7 @@ void clientRX(const int &sock) {
 }
 
 
-void clientTX(void* sock) { //sending
+void clientTXtcp(void* sock) { //sending
         int battery, distance;
         uint16_t speed;
         printf("TCP TX init | Socket: %d\n", (int)sock);
