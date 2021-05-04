@@ -1,5 +1,5 @@
 # ReTank - DIY remote controlled tank. :blue_car:
-![alt model](https://github.com/mbober1/ReTank/blob/master/doc/figures/chassis%20v5.png?raw=true)
+![alt model](https://github.com/mbober1/ReTank/blob/master/doc/figures/chassisV1.png?raw=true)
 # Usage
 
 ## Hardware
