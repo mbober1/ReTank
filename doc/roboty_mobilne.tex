@@ -187,7 +187,209 @@ Ich skrócona specyfikacja:
 \end{enumerate}
 
 
+\section{Podwozie}
+Podwozie zostało zaprojektowane w programie Fusion360. 
+Pierwsza wersja cierpiała na problemy związane z małą sztywnością 
+konstrukcji, co znacząco wpływało na jakość sterowania. 
+Z tego też powodu została zaprojektowana druga, znacznie wytrzymalsza
+wersja podwozia.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{figures/chassisV1.png}
+	\caption{Pierwsza wersja podwozia}
+	\label{fig:chassisv1}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{figures/chassisV1.png}
+	\caption{Druga wersja podwozia}
+	\label{fig:chassisv2}
+\end{figure}
+
+
+\section{Płytka drukowana}
+W celu zwiększenia jakości i poprawy niezawodności projektu, 
+została zaprojektowana płytka drukowana, która ma za zadanie
+integrować wszystkie niezbędne peryferia i minimalzować zajmowane miejsce. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{figures/schematic.png}
+	\caption{Schemat połączeń}
+	\label{fig:schematic}
+\end{figure}
+
+2021-04-16 zostało złożone zamówienie na 5 sztuk płytek.
+Zamówienie jest jeszcze w trakcie transportu. Ostateczną wersję 
+można zobaczyć poniżej. Z powodu ograniczonej przestrzeni i
+niewystarczającej liczby pinów mikrokontrolera, zrezygnowałem z
+portu JTAG.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{figures/pcb.png}
+	\caption{PCB}
+	\label{fig:pcb}
+\end{figure}
+
+
+\section{Program}
+Program na mikrokontroler został napisany z użyciem warstwy abstrakcji
+ESP-IDF, udostępnionej przez producenta układu. Dla zwiększenia 
+możliwości sprzętu, zdecydowałem się na użycie systemu czasu rzeczywistego
+FreeRTOS. Dzięki temu kod został podzielony na oddzielne moduły, 
+a każdy z nich pracuje na swoim odrębnym wątku. Pozwoliło to również
+ustawiać wyższy piorytet funkcjom, które mają krytyczny wpływ na dzianie robota.
+Komunikacja międzyprocesowa została zrealizowana poprzez kolejki piorytetowe,
+co znacząco usprawnia cały proces.
+
+Całość kodu dostępna jest w moim repozytorium na
+\href{https://github.com/mbober1/ReTank}{GitHub}.
+
+\section{Komunikacja z robotem}
+
+Połączenie z robotem odbywa się poprzez sieć WiFi. W pierwszej kolejności 
+nawiązywane jest połączenie przy użyciu protokołu TCP. Jeśli się ono powiedzie
+to uruchamiana jest dodatkowa transmicja z wykorzystaniem UDP. 
+Dzięki takiej koncepcji mamy dwa niezależne kanały komunikacji. Pierwszy służy
+do przesyłania danych które mają niski piorytet czasowy, potrzebują potwierdzenia
+odebrania i ewentualnej retransmisji danych. Druga droga komunikacji powstała, 
+aby przesyłać ciągły strumień nowych danych. Zależy nam na jaknajniższym opóźnieniu,
+a ewentualny błąd trasmisji nie jest krytyczny, bo inforamcje te szybko się 
+przedawniają i są zastępowane przez nowe, świeższe. \newline
+
+Każda ramka zaczyna się od wybranej dużej litery alfabetu, określającej rodzaj 
+przesyłanych danych. Dla protokołu TCP są to:
+
+	\begin{itemize}
+	  \item P - ping,
+	  \item D - dystans przeszkody,
+	  \item B - bateria,
+	  \item S - realna predkość.
+	\end{itemize}
+	
+Natomiast dla protokołu UDP wyróżniamy:
+  \begin{itemize}
+	\item E - moc silników,
+	\item A - akcelometr,
+	\item G - żyroskop.
+  \end{itemize}
+
+Wszystkie paczki danych zakończone są średnikiem, przed którym znajduje się
+ośmiobitowy cykliczny kod nadmiarowy. Niestety ze względu na róźnorodność 
+transmitownych informacji, w tym miejscu kończą się cechy wspólne poszczególnych 
+ramek.
+
+\subsection{Ping}
+Jest to najprostrza z obecych tu ramek. Nie przenosi żadnych informacji.
+Oznacza jedynie koniecność odesłania do nadawcy identyczniej wiadomości,
+aby można było wyznaczyć chwilę czasowe, niezbędne do obliczenia opóźnienia
+transmisji.
+
+Forma ramki to: $P\#;$
+
+Gdzie \# oznacza CRC.
+
+
+
+\subsection{Dystans przeszkody}
+Przesyła informacje z robota o odległości odczytanej z czujnika ultradzwiękowego.
+
+Forma ramki to: $D<uint8\_t>\#$;
+\newline
+
+Gdzie \# oznacza CRC. Przed nim znajduje się wartość odległości wyrażonej 
+w centymetrach, w zakresie 0-100cm.
+
+
+
+\subsection{Bateria}
+Przesyła informacje z robota o poziomie baterii.
+
+Forma ramki to: $B<uint8\_t>\#$;
+\newline
+
+Gdzie \# oznacza CRC. Przed nim znajduje się poziom baterii wyrażonej 
+w procentach, w zakresie 0-100\%.
+
+
+
+\subsection{Prędkość}
+Przesyła informacje z robota o prędkości na kołach.
+
+Forma ramki to: $S<uint8\_t> <uint8\_t>\#$;
+\newline
+
+Gdzie \# oznacza CRC. Przed nim znajdujdują się dwie wartości oddzielone spacją
+odnoszące się do prędkości poszczególnych kół wyrażonej w metrach na sekunde.
+
+
+
+\subsection{Moc silników}
+Przesyła informacje z aplikacji do robota o zadanej mocy silników.
+
+Forma ramki to: $E<uint8\_t> <uint8\_t>\#$;
+\newline
+
+Gdzie \# oznacza CRC. Przed nim znajdujdują się dwie wartości oddzielone spacją
+odnoszące się do zadanej mocy poszczególnych kół wyrażonej w procentach.
+Zakresy tych wartości musza mieścić się od 0 do 100\%
+
+
+
+\subsection{Akcelometr}
+Przesyła informacje z robota o aktualnych wskazaniach akcelometru.
+
+Forma ramki to: $A<uint8\_t> <uint8\_t> <uint8\_t>\#$;
+\newline
+
+Gdzie \# oznacza CRC. Przed nim znajdujdują się trzy wartości oddzielone spacją
+odnoszące się do aktualnych wskazań akcelometru.
+
+
+\subsection{Żyroskop}
+Przesyła informacje z robota o aktualnych wskazaniach żyroskopu.
+
+Forma ramki to: $G<uint8\_t> <uint8\_t> <uint8\_t>\#$;
+\newline
+
+Gdzie \# oznacza CRC. Przed nim znajdujdują się trzy wartości oddzielone spacją
+odnoszące się do aktualnych wskazań żyroskopu.
+
+
+\section{Aplikacja do komunikacji}
+Rezultaty komunikacji z komputerem i działania całego projektu możemy z
+łatwością podziwiać z pomocą mojej specialnie przygotowanej aplikacji w QT
+dostępnej w moim repozytorium na
+\href{https://github.com/mbober1/RoboVision}{GitHub}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{figures/app.png}
+	\caption{Aplikacja RoboVision}
+	\label{fig:app}
+\end{figure}
+
+
+\section{Aktualne rezultaty}
+Na dzień dzisiejszy, projekt nie jest obarczony żadnymi opóźnieniami. Wszystkie 
+zaplanowane kamienie milowe zostały osiągnięte przed terminem. Robot może 
+poszczycić się już działającym mi silnikami wraz z sterownikami PID, gotowym
+czujnikiem ultradzwiękowym, akcelerometrem, żyroskopem, komunikacją z 
+zewnętrzną aplikacją. Pozostało więc jedynie poprawiać pozostałe błędy i 
+czekać na przybycie przesyłki z płytką drukowaną, aby móc skończyć projekt. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{figures/robotv1.jpg}
+	\caption{Prototyp robota}
+	\label{fig:robot}
+\end{figure}
+
 \end{document}
+
 
 
 
