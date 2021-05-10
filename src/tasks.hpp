@@ -90,8 +90,8 @@ void mpuTask(void*) {
         AcceloPacket packetA(accelG[0] * 100, accelG[1] * 100, accelG[2] * 100);
         xQueueSendToBack(accelQueue, &packetA, 0);
 
-        // GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
-        // xQueueSendToBack(gyroQueue, &packetG, 0);
+        GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
+        xQueueSendToBack(gyroQueue, &packetG, 0);
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
