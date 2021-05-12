@@ -68,6 +68,18 @@ inline float_axes_t accelGravity(const raw_axes_t& raw_axes, const accel_fs_t fs
     return axes;
 }
 
+inline void deadZone(float_axes_t& axes, int deadzone)
+{
+    if(abs(axes.x) < deadzone) axes.x = 0; 
+    if(abs(axes.y) < deadzone) axes.y = 0; 
+    if(abs(axes.z) < deadzone) axes.z = 0; 
+}
+
+inline bool ifZero(const float_axes_t& axes)
+{
+    return axes.x || axes.y || axes.z;
+}
+
 inline float gyroDegPerSec(const int16_t axis, const gyro_fs_t fs)
 {
     return axis * gyroResolution(fs);
