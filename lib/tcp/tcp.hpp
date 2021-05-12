@@ -98,9 +98,15 @@ static void TXtcp(void* sock) { //sending
             send((int)sock, data.c_str(), data.size(), 0);
         }
 
-        if(xQueueReceive(accelQueue, &accel, portMAX_DELAY) == pdTRUE) {
+        if(xQueueReceive(accelQueue, &accel, 0) == pdTRUE) {
             std::string data = accel.prepare();
             send((int)sock, data.c_str(), data.size(), 0);
+        }
+
+        if(xQueueReceive(gyroQueue, &gyro, 0) == pdTRUE) {
+            std::string data = gyro.prepare();
+            send((int)sock, data.c_str(), data.size(), 0);
+            printf("gyro %d, %d, %d\n", gyro.x, gyro.y, gyro.z);
         }
     }
 
