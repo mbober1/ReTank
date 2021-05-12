@@ -13,9 +13,8 @@ void batteryTask(void*) {
 
     while (1)
     {
-        int percentage = 100;
-        // int percentage = battery.getVoltage() * 25;
-        // printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
+        int percentage = battery.getVoltage() * 25;
+        printf("Voltage: %.2fV | Percentage %3.0d\n", battery.getVoltage(), battery.getPercentage());
         xQueueSendToBack(batteryQueue, &percentage, 0);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -66,32 +65,29 @@ void mpuTask(void*) {
     ESP_ERROR_CHECK(MPU.testConnection());
     ESP_ERROR_CHECK(MPU.initialize());
 
-    // MPU.setSampleRate(250);  // in (Hz)
+    MPU.setSampleRate(15);  // in (Hz)
     MPU.setAccelFullScale(mpud::ACCEL_FS_4G);
     MPU.setGyroFullScale(mpud::GYRO_FS_500DPS);
-    MPU.setDigitalLowPassFilter(mpud::DLPF_42HZ);  // smoother data
-    MPU.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);  // enable INT pin
-
+    MPU.setDigitalLowPassFilter(mpud::DLPF_10HZ);  // smoother data
 
     while (1) {
         mpud::raw_axes_t accelRaw;     // holds x, y, z axes as int16
         mpud::raw_axes_t gyroRaw;      // holds x, y, z axes as int16
         MPU.acceleration(&accelRaw);  // fetch raw data from the registers
         MPU.rotation(&gyroRaw);       // fetch raw data from the registers
-        // printf("accel: %+d %+d %+d\n", accelRaw.x, accelRaw.y, accelRaw.z);
-        // printf("gyro: %+d %+d %+d\n", gyroRaw[0], gyroRaw[1], gyroRaw[2]);
-
 
         mpud::float_axes_t accelG = mpud::accelGravity(accelRaw, mpud::ACCEL_FS_4G);  // raw data to gravity
-        mpud::float_axes_t gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_500DPS);  // raw data to º/s
-        // printf("accel: %+.2f %+.2f %+.2f\n", accelG[0], accelG[1], accelG[2]);
-        // printf("gyro: %+.2f %+.2f %+.2f\n", gyroDPS.x, gyroDPS.y, gyroDPS.z);
+        mpud::float_axes_t gyroDPS = mpud::gyroDegPerSec(gyroRaw, mpud::GYRO_FS_250DPS);  // raw data to º/s
+        mpud::deadZone(gyroDPS, 2);
+        
+        if(mpud::ifZero(gyroDPS)) {
+            GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
+            xQueueSendToBack(gyroQueue, &packetG, 0);
+        }
 
         AcceloPacket packetA(accelG[0] * 100, accelG[1] * 100, accelG[2] * 100);
         xQueueSendToBack(accelQueue, &packetA, 0);
 
-        GyroPacket packetG(gyroDPS.x, gyroDPS.y, gyroDPS.z);
-        xQueueSendToBack(gyroQueue, &packetG, 0);
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
