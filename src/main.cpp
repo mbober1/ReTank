@@ -100,7 +100,7 @@ extern "C" void app_main()
             xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, &battery);
             xTaskCreate(mpuTask, "mpuTask", 4096, NULL, 5, &mpu);
 
-            printf("dddd\r\n");
+
             RXtcp(sock); //wait until client connected
 
             printf("TCP TX kill task \n");
