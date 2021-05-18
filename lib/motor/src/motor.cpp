@@ -144,34 +144,40 @@ void motor::compute(const int &setpoint) {
     pcnt_get_counter_value(this->encoder, &input);
     pcnt_counter_clear(this->encoder);
 
-    int epsilon = setpoint/2 - input;
-   
-    this->integralError+= epsilon;
-    if(this->integralError > MAX_INTEGRAL) this->integralError = MAX_INTEGRAL;
-    else if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
-    this->derivativeError = epsilon - epsilonOld;
+    if(!setpoint) {
+        this->power(0);
+        this->softStop();
+    } else {
 
-    this->kp = 40;
-    this->ki = 6;
-    this->kd = 2;
+        int epsilon = setpoint/2 - input;
 
-    int p = kp*epsilon;
-    int i = ki*this->integralError;
-    int d = kd*this->derivativeError;
+        this->integralError+= epsilon;
+        if(this->integralError > MAX_INTEGRAL) this->integralError = MAX_INTEGRAL;
+        else if(this->integralError < -MAX_INTEGRAL) this->integralError = -MAX_INTEGRAL;
+        this->derivativeError = epsilon - epsilonOld;
+
+        this->kp = 40;
+        this->ki = 6;
+        this->kd = 2;
+
+        int p = kp*epsilon;
+        int i = ki*this->integralError;
+        int d = kd*this->derivativeError;
 
 
-    int32_t pid = p + i + d;
-    
+        int32_t pid = p + i + d;
+        
 
-    uint16_t pow = abs(pid); 
-    if(pow > MAX_POWER) pow = MAX_POWER;
-    if(pid > 0) this->direction(Direction::FORWARD);
-    else if(pid < 0) this->direction(Direction::BACKWARD);
-    else this->softStop();
+        uint16_t pow = abs(pid); 
+        if(pow > MAX_POWER) pow = MAX_POWER;
+        if(pid > 0) this->direction(Direction::FORWARD);
+        else if(pid < 0) this->direction(Direction::BACKWARD);
+        else this->softStop();
 
-    this->power(pow);
+        this->power(pow);
 
-    epsilonOld = epsilon;
+        epsilonOld = epsilon;
+    }
 
     // printf("Motor %d -> Error: %+4d, Input1: %+3d, P: %7d + I: %7d + D: %7d = PID: %7d power: %d\n", this->encoder, epsilon, input, p, i, d, pid, pow);
 
