@@ -106,7 +106,6 @@ static void TXtcp(void* sock) { //sending
         if(xQueueReceive(gyroQueue, &gyro, 0) == pdTRUE) {
             std::string data = gyro.prepare();
             send((int)sock, data.c_str(), data.size(), 0);
-            printf("gyro %d, %d, %d\n", gyro.x, gyro.y, gyro.z);
         }
     }
 
@@ -114,35 +113,11 @@ static void TXtcp(void* sock) { //sending
 }
 
 
-// static void TXudp(void *sock) {
-//     AcceloPacket accel;
-//     GyroPacket gyro;
-//     printf("UDP TX init | Socket: %d\n", (int)sock);
-
-//     while (true) {
-//         if(xQueueReceive(accelQueue, &accel, portMAX_DELAY) == pdTRUE) {
-//             printf("accel\n");
-//             std::string data = accel.prepare();
-//             send((int)sock, data.c_str(), data.size(), 0);
-//         }
-
-//         // if(xQueueReceive(gyroQueue, &gyro, 0) == pdTRUE) {
-//         //     std::string data = gyro.prepare();
-//         //     // send((int)sock, data.c_str(), data.size(), 0);
-//         // }
-//         // vTaskDelay(pdMS_TO_TICKS(100));
-//     }
-    
-//     vTaskDelete(NULL);
-// }
-
-
 
 static void RXudp(void *port) {
     static const char *TAG = "UDP";
 
     char rx_buffer[128];
-    // char clientAddress[128];
     struct sockaddr_in6 dest_addr;
 
     while (1) {
@@ -176,16 +151,12 @@ static void RXudp(void *port) {
                 break;
             } else {
                 std::string data(rx_buffer, len);
-                // printf("%s Received %d bytes |   %s\n", TAG, len, x.c_str());
     
-                // printf("UDP | Dostalem: %s#\n", data.c_str());
                 int separator = data.find(';');
-                // printf("Znalazłem separator na miejscu: %d\n", separator);
                 
                 while(separator != std::string::npos) {
                     std::string parse = data.substr(0, separator);
                     data.erase(0, separator + 1);
-                    // printf("Nowy string: %s\n", parse.c_str());
 
                     Packet* packet = Packet::decode(parse);
 
@@ -203,7 +174,6 @@ static void RXudp(void *port) {
                         delete packet;
                     }
                     separator = data.find(';');
-                    // printf("Znalazłem separator na miejscu: %d\n", separator);
                 }
             }
         }

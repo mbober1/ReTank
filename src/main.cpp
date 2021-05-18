@@ -94,7 +94,6 @@ extern "C" void app_main()
             TaskHandle_t mpu = NULL;
 
             xTaskCreate(TXtcp, "tcp_client_tx", 4096, (void*)sock, 5, &txtcp);
-            // xTaskCreate(TXudp, "udp_server_tx", 4096, (void*)sock, 5, &txudp);
             xTaskCreate(RXudp, "udp_server_rx", 4096, (void*)UDP_PORT, 10, &rxudp);
             xTaskCreate(robotDriver, "driver", 4096, nullptr, 20, &driver);
             xTaskCreate(batteryTask, "batteryTask", configMINIMAL_STACK_SIZE * 3, NULL, 3, &battery);
