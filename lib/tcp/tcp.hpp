@@ -172,7 +172,7 @@ static void RXudp(void *port) {
                             break;
                         }
                         delete packet;
-                    }
+                    } else { break; }
                     separator = data.find(';');
                 }
             }
